@@ -34,7 +34,7 @@ void main() {
               innerPatterns: innerPatterns
             );
           },
-          createInnerItems: () => [
+          innerItems: () => [
             definition.basicMatch
           ]
         );
@@ -49,7 +49,7 @@ void main() {
       test("for GroupingPatterns", () {
         var item = definition.createItem(
           "newItem",
-          createInnerItems: () => [
+          innerItems: () => [
             definition.basicMatch,
           ],
         );

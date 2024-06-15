@@ -43,14 +43,14 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
     String identifier,
     {
       required Pattern Function(String debugName, List<Pattern> innerPatterns) createBody,
-      List<DefinitionItem>? Function()? createInnerItems,
+      List<DefinitionItem>? Function()? innerItems,
     }
   ) {
     var item = DefinitionItem._(
       identifier,
       parent: this,
       createBody: createBody,
-      createInnerItems: createInnerItems,
+      calcInnerItems: innerItems,
     );
     _items.add(item);
     return item;
@@ -66,7 +66,7 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
       Map<GroupRef, StyleName>? captures,
       Map<GroupRef, StyleName>? beginCaptures,
       Map<GroupRef, StyleName>? endCaptures,
-      List<DefinitionItem>? Function()? createInnerItems,
+      List<DefinitionItem>? Function()? innerItems,
     }
   ) {
     var argMap = {
@@ -87,7 +87,7 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
         argMap['innerPatterns'] = innerPatterns;
         return _createItem_smartBody(argMap);
       },
-      createInnerItems: createInnerItems,
+      innerItems: innerItems,
     );
   }
 
@@ -224,18 +224,18 @@ final class DefinitionItem {
   final SyntaxDefinition parent;
   final String identifier;
   final Pattern Function(String debugName, List<Pattern> innerPatterns) createBody;
-  final List<DefinitionItem>? Function()? createInnerItems;
+  final List<DefinitionItem>? Function()? calcInnerItems;
 
   DefinitionItem._(
     this.identifier,
     {
       required this.parent,
       required this.createBody,
-      this.createInnerItems,
+      this.calcInnerItems,
     }
   );
 
-  late final innerItems = createInnerItems?.call() ?? [];
+  late final innerItems = calcInnerItems?.call() ?? [];
 
   RepositoryItem asRepositoryItem() => _repositoryItem;
   late final _repositoryItem = RepositoryItem(
