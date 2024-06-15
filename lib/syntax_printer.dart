@@ -40,23 +40,29 @@ sealed class SyntaxElement implements JsonEncodable {
 
 
 final class MainBody extends SyntaxElement {
-  final List<String> fileTypes;
+  final String? scopePrefix;
+  final bool isTextSyntax;
   final String langName;
+  final List<String> fileTypes;
   final List<Pattern> topLevelPatterns;
   final List<RepositoryItem> repository;
 
   const MainBody({
-    required this.fileTypes,
+    this.scopePrefix,
+    required this.isTextSyntax,
     required this.langName,
+    required this.fileTypes,
     required this.topLevelPatterns,
     required this.repository,
   });
 
   @override
   Map toJson() {
+    var prefix = (scopePrefix != null)? "$scopePrefix." : "";
+    var scopeType = isTextSyntax? "text" : "source";
     return {
       "fileTypes": fileTypes,
-      "scopeName": "source.$langName",
+      "scopeName": "$prefix$scopeType.$langName",
       "patterns": topLevelPatterns,
       "repository": {
         for (var item in repository)

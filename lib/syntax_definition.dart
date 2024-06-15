@@ -6,15 +6,17 @@ import './regexp_recipes.dart';
 
 
 abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>, CollectionT> {
-  final String langName;
+  final String? scopePrefix;
   final bool isTextSyntax;
+  final String langName;
   final List<String> fileTypes;
   final List<DefinitionItem> _items = [];
   late final CollectionT collection;
   
   SyntaxDefinition({
-    required this.langName,
+    this.scopePrefix,
     required this.isTextSyntax,
+    required this.langName,
     required this.fileTypes,
     required BuilderT builder,
   }) {
@@ -27,8 +29,10 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
   // TODO: is there a way to add tests for this?
   MainBody _createMainBody() {
     var body = MainBody(
-      fileTypes: fileTypes,
+      scopePrefix: scopePrefix,
+      isTextSyntax: isTextSyntax,
       langName: langName,
+      fileTypes: fileTypes,
       topLevelPatterns: [for (var item in rootItems) item.asIncludePattern()],
       repository: [for (var item in _items) item.asRepositoryItem()],
     );
