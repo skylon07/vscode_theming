@@ -422,6 +422,7 @@ r"""
     test("those with all their attributes defined", () {
       var result = SyntaxPrinter.instance.print(
         MainBody(
+          isTextSyntax: false,
           fileTypes: [
             "dart1",
             "dart2"
