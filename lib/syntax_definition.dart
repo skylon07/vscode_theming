@@ -61,6 +61,7 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
     {
       StyleName? styleName,
       RegExpRecipe? match,
+      RegExpPair? matchPair,
       RegExpRecipe? begin,
       RegExpRecipe? end,
       Map<GroupRef, StyleName>? captures,
@@ -73,8 +74,8 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
       'debugName': null, // set later
       'styleName': styleName,
       'match': match,
-      'begin': begin,
-      'end': end,
+      'begin': begin ?? matchPair?.begin,
+      'end': end ?? matchPair?.end,
       'captures': captures,
       'beginCaptures': beginCaptures,
       'endCaptures': endCaptures,
