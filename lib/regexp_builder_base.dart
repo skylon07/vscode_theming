@@ -1,3 +1,5 @@
+import 'package:vscode_theming/syntax_definition.dart';
+
 import './regexp_recipes.dart';
 import './regexp_normalization.dart';
 
@@ -38,6 +40,8 @@ abstract base class RegExpBuilder<CollectionT> {
   }
 
   RegExpRecipe concat(List<RegExpRecipe> recipes) => capture(_join(recipes, joinBy: "", tag: RegExpTag.concat));
+
+  RegExpPair pair({required RegExpRecipe begin, required RegExpRecipe end}) => RegExpPair(begin, end);
 
   RegExpRecipe _augment(RegExpRecipe recipe, String Function(String expr) mapExpr, {RegExpTag tag = RegExpTag.none}) =>
     normalize(AugmentedRegExpRecipe(recipe, mapExpr, tag: tag));
