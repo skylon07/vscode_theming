@@ -1,0 +1,7 @@
+name: vscode_theming
+
+environment:
+  sdk: '^3.4.0'
+
+dev_dependencies:
+  test: ^1.25.2
