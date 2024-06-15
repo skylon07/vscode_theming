@@ -126,8 +126,16 @@ final class TrackedRegExpRecipe extends AugmentedRegExpRecipe {
   @override
   late final GroupTracker _tracker;
 
-  TrackedRegExpRecipe(super.source, super.augment, {GroupRef? ref, super.tag}) {
-    var newTracker = source._tracker.increment();
+  TrackedRegExpRecipe(
+    super.source,
+    super.augment,
+    {
+      GroupRef? ref,
+      GroupTracker? tracker,
+      super.tag,
+    }
+  ) {
+    var newTracker = tracker ?? source._tracker.increment();
     if (ref != null) {
       newTracker = newTracker.startTracking(ref);
     }
@@ -138,12 +146,12 @@ final class TrackedRegExpRecipe extends AugmentedRegExpRecipe {
   TrackedRegExpRecipe copy({
     RegExpRecipe? source,
     Augmenter? augment,
-    GroupRef? ref,
+    GroupTracker? tracker,
     RegExpTag? tag,
   }) => TrackedRegExpRecipe(
     source ?? this.source,
     augment ?? this.augment,
-    ref: ref,
+    tracker: tracker ?? this._tracker,
     tag: tag ?? this.tag,
   );
 }
