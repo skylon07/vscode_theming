@@ -3,5 +3,8 @@ name: vscode_theming
 environment:
   sdk: '^3.4.0'
 
+dependencies:
+  meta: ^1.15.0
+
 dev_dependencies:
   test: ^1.25.2
