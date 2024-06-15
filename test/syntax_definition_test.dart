@@ -60,6 +60,8 @@ void main() {
       // TODO: error tests for invalid combinations
     });
   });
+
+  // TODO: test main body creation and warnings
 }
 
 

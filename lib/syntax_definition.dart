@@ -26,7 +26,6 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
   List<DefinitionItem> get rootItems;
 
   late final mainBody = _createMainBody();
-  // TODO: is there a way to add tests for this?
   MainBody _createMainBody() {
     var body = MainBody(
       scopePrefix: scopePrefix,
@@ -187,18 +186,28 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
     for (var collectionDeclaration in collectionInstance.type.declarations.values) {
       // check it isn't a constructor, method, etc.
       if (collectionDeclaration is VariableMirror) {
+        String? offendingReason = null;
         try {
           var collectionValue = collectionInstance.delegate(Invocation.getter(collectionDeclaration.simpleName));
-          var offendingReason = switch (collectionValue) {
+          offendingReason = switch (collectionValue) {
             RegExpRecipe(hasCompiled: false) => "unused recipe",
             GroupRef(positionUsed: false) => "unused ref",
+            RegExpPair(
+              begin: RegExpRecipe(hasCompiled: var beginHasCompiled), 
+              end: RegExpRecipe(hasCompiled: var endHasCompiled),
+            ) => {
+              (false, false): "unused (begin/end) recipe",
+              (false, true): "unused (begin) recipe",
+              (true, false): "unused (end) recipe",
+              (true, true): null,
+            }[(beginHasCompiled, endHasCompiled)],
             _ => null,
           };
-          if (offendingReason != null) {
-            offendingCollectionDeclarations.add((collectionDeclaration, offendingReason));
-          }
         } catch (error) {
-          offendingCollectionDeclarations.add((collectionDeclaration, "access error"));
+          offendingReason = "access error";
+        }
+        if (offendingReason != null) {
+          offendingCollectionDeclarations.add((collectionDeclaration, offendingReason));
         }
       }
     }
@@ -246,6 +255,14 @@ final class DefinitionItem {
 
 abstract interface class StyleName {
   String get scope;
+}
+
+
+final class RegExpPair {
+  final RegExpRecipe begin;
+  final RegExpRecipe end;
+
+  RegExpPair(this.begin, this.end);
 }
 
 
