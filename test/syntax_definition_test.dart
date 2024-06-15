@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
 
-import '../lib/better_textmate/better_textmate.dart';
+import '../lib/vscode_theming.dart';
 
 
 void main() {
@@ -221,7 +221,7 @@ void main() {
             ])
           )
           .compile();
-        expect(result, equals("(?!(?<=abc|def))"));
+        expect(result, equals("(?!(?<=(abc|def)))"));
       });
       test("those with `concat` clauses inside them", () {
         var result = builder
@@ -232,7 +232,7 @@ void main() {
             ])
           )
           .compile();
-        expect(result, equals("(?<!abcdef)"));
+        expect(result, equals("(?!(?<=(abcdef)))"));
       });
     });
   });

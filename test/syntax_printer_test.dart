@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
 
-import '../lib/better_textmate/better_textmate.dart';
+import '../lib/vscode_theming.dart';
 
 
 String syntaxPrint(SyntaxElement syntax) =>
