@@ -59,7 +59,7 @@ final class MainBody extends SyntaxElement {
   @override
   Map toJson() {
     var prefix = (scopePrefix != null)? "$scopePrefix." : "";
-    var scopeType = isTextSyntax? "text" : "source";
+    var scopeType = isTextSyntax ? "text" : "source";
     return {
       "fileTypes": fileTypes,
       "scopeName": "$prefix$scopeType.$langName",
@@ -106,8 +106,8 @@ sealed class Pattern extends SyntaxElement {
   Map toJson() {
     final styleName = this.styleName;
     var name =
-      "${(styleName != null)? "${styleName.scope} " : ""}"
-      "${debugName.isNotEmpty? "debugName.$debugName" : ""}";
+      "${styleName != null ? "${styleName.scope} " : ""}"
+      "${debugName.isNotEmpty ? "debugName.$debugName" : ""}";
     return {
       if (name.isNotEmpty)
         'name': name,
@@ -208,7 +208,7 @@ final class IncludePattern extends Pattern {
     var shouldTreatAsReference = identifier.isNotEmpty && identifier[0] != "%";
     return {
       ...super.toJson(),
-      'include': shouldTreatAsReference? "#$identifier" : identifier.substring(1),
+      'include': shouldTreatAsReference ? "#$identifier" : identifier.substring(1),
     };
   }
 }

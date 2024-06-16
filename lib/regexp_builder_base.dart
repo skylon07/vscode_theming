@@ -28,7 +28,7 @@ abstract base class RegExpBuilder<CollectionT> {
 
   RegExpRecipe _chars(String charSet, {bool invert = false}) {
     var baseRecipe = _escapedPattern(charSet, RegExp(r"[\[\]\^\/]"));
-    var augment = (expr) => "[${invert? "^":""}$expr]";
+    var augment = (expr) => "[${invert ? "^":""}$expr]";
     return normalize(InvertibleRegExpRecipe(baseRecipe, augment, inverted: invert, tag: RegExpTag.chars));
   }
 
@@ -113,7 +113,7 @@ abstract base class RegExpBuilder<CollectionT> {
   late final _anySpace = _escapedPattern(r"\s*", null);
   late final _reqSpace = _escapedPattern(r"\s+", null);
 
-  RegExpRecipe space({required bool req}) => req? _reqSpace : _anySpace;
+  RegExpRecipe space({required bool req}) => req ? _reqSpace : _anySpace;
 
   RegExpRecipe spaceBefore(RegExpRecipe inner) =>
     concat([_anySpace, inner]);
