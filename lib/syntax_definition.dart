@@ -32,8 +32,11 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
       isTextSyntax: isTextSyntax,
       langName: langName,
       fileTypes: fileTypes,
-      topLevelPatterns: [for (var item in rootItems) item.asIncludePattern()],
-      repository: [for (var item in _items) item.asRepositoryItem()],
+      topLevelPatterns: [for (var item in rootItems) item.asInnerItem()],
+      repository: [
+        for (var itemIdx = 0; itemIdx < _items.length; ++itemIdx) 
+          _items[itemIdx].asRepositoryItem()
+      ],
     );
     _warnBadCollectionDeclarations();
     return body;
@@ -223,7 +226,7 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
 
 final class DefinitionItem {
   final SyntaxDefinition baseSyntax;
-  final String identifier;
+  final String? identifier;
   final Pattern Function(String debugName, List<Pattern> innerPatterns) createBody;
   final List<DefinitionItem>? Function()? calcInnerItems;
 
@@ -239,18 +242,33 @@ final class DefinitionItem {
   late final innerItems = calcInnerItems?.call() ?? [];
 
   RepositoryItem asRepositoryItem() => _repositoryItem;
-  late final _repositoryItem = RepositoryItem(
-    identifier: identifier,
-    body: createBody(
-      "${baseSyntax.langName}.$identifier",
-      innerItems
-        .map((item) => item.asIncludePattern())
-        .toList(),
-    )
+  late final _repositoryItem = _whenInline(
+    () => throw ArgumentError.notNull("identifier"),
+    (identifier) => RepositoryItem(
+      identifier: identifier,
+      body: _body
+    ),
+  );
+  
+  Pattern asInnerItem() => _innerItemPattern;
+  late final _innerItemPattern = _whenInline(
+    () => _body,
+    (identifier) => IncludePattern(identifier: identifier),
   );
 
-  IncludePattern asIncludePattern() => _includePattern;
-  late final _includePattern = IncludePattern(identifier: identifier);
+  late final _body = createBody(
+    "${baseSyntax.langName}.$identifier",
+    [
+      for (var item in innerItems)
+        item.asInnerItem()
+    ],
+  );
+
+  ResultT _whenInline<ResultT>(ResultT Function() isInline, ResultT Function(String) isNotInline) {
+    final identifier = this.identifier;
+    var inline = identifier == null;
+    return inline ? isInline() : isNotInline(identifier);
+  }
 }
 
 
