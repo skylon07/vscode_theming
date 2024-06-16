@@ -48,7 +48,7 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
   ) {
     var item = DefinitionItem._(
       identifier,
-      parent: this,
+      baseSyntax: this,
       createBody: createBody,
       calcInnerItems: innerItems,
     );
@@ -222,7 +222,7 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
 }
 
 final class DefinitionItem {
-  final SyntaxDefinition parent;
+  final SyntaxDefinition baseSyntax;
   final String identifier;
   final Pattern Function(String debugName, List<Pattern> innerPatterns) createBody;
   final List<DefinitionItem>? Function()? calcInnerItems;
@@ -230,7 +230,7 @@ final class DefinitionItem {
   DefinitionItem._(
     this.identifier,
     {
-      required this.parent,
+      required this.baseSyntax,
       required this.createBody,
       this.calcInnerItems,
     }
@@ -242,7 +242,7 @@ final class DefinitionItem {
   late final _repositoryItem = RepositoryItem(
     identifier: identifier,
     body: createBody(
-      "${parent.langName}.$identifier",
+      "${baseSyntax.langName}.$identifier",
       innerItems
         .map((item) => item.asIncludePattern())
         .toList(),

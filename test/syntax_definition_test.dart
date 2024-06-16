@@ -13,7 +13,7 @@ void main() {
 
     void expectItem_groupPattern(DefinitionItem item) {
       expect(item.identifier, equals("newItem"));
-      expect(item.parent, same(definition));
+      expect(item.baseSyntax, same(definition));
       expect(item.innerItems, [definition.basicMatch]);
 
       var repositoryItem = item.asRepositoryItem();
