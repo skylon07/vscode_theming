@@ -22,27 +22,6 @@ void main() {
       expect(repositoryItem.body.debugName, equals("TESTLANG.newItem"));
       expect(repositoryItem.body.styleName, equals(null));
     }
-    
-    
-    group("directly, like", () {
-      test("for GroupingPatterns", () {
-        var item = definition.createItemDirect(
-          "newItem",
-          createBody: (debugName, innerPatterns) {
-            return GroupingPattern(
-              debugName: debugName,
-              innerPatterns: innerPatterns
-            );
-          },
-          innerItems: () => [
-            definition.basicMatch
-          ]
-        );
-        expectItem_groupPattern(item);
-      });
-
-      // TODO: tests for other Patterns
-    });
 
 
     group("intelligently, like", () {
@@ -76,10 +55,9 @@ final class TestDefinition extends SyntaxDefinition<TestBuilder, TestCollection>
   @override
   List<DefinitionItem> get rootItems => throw UnimplementedError();
 
-  late final basicMatch = createItemDirect(
+  late final basicMatch = createItem(
     "basicCapture",
-    createBody: (debugName, innerPatterns) => 
-      MatchPattern(debugName: debugName, match: "matchPattern"),
+    match: builder.exactly("matchPattern"),
   );
 }
 
