@@ -1,7 +1,6 @@
-import 'package:vscode_theming/syntax_definition.dart';
-
 import './regexp_recipes.dart';
 import './regexp_normalization.dart';
+import './syntax_definition.dart';
 
 
 abstract base class RegExpBuilder<CollectionT> {
