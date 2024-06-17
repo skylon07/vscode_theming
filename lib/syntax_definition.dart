@@ -11,11 +11,8 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
   final String langName;
   final List<String> fileTypes;
 
-  final List<DefinitionItem> _repoItems = [];
-  bool _isComputingInnerItems = false;
-  StyleName? _parentStyleCache = null;
-  String _parentIdentifierCache = "";
-  int _currInnerItemsCreated = 0;
+  final List<ScopeUnit> _repoUnits = [];
+  final _linker = _ScopeLinker();
 
   late final CollectionT collection;
   
@@ -29,7 +26,7 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
     collection = builder.createCollection();
   }
 
-  List<DefinitionItem> get rootItems;
+  List<ScopeUnit> get rootUnits;
 
   late final mainBody = _createMainBody();
   MainBody _createMainBody() {
@@ -38,17 +35,17 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
       isTextSyntax: isTextSyntax,
       langName: langName,
       fileTypes: fileTypes,
-      topLevelPatterns: [for (var item in rootItems) item.asInnerItem()],
+      topLevelPatterns: [for (var unit in rootUnits) unit.asInnerPattern()],
       repository: [
-        for (var itemIdx = 0; itemIdx < _repoItems.length; ++itemIdx) 
-          _repoItems[itemIdx].asRepositoryItem()
+        for (var unitIdx = 0; unitIdx < _repoUnits.length; ++unitIdx) 
+          _repoUnits[unitIdx].asRepositoryItem()
       ],
     );
     _warnBadCollectionDeclarations();
     return body;
   }
 
-  DefinitionItem createItem(
+  ScopeUnit createUnit(
     String identifier,
     {
       StyleName? styleName,
@@ -57,10 +54,10 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
       Map<GroupRef, StyleName>? captures,
       Map<GroupRef, StyleName>? beginCaptures,
       Map<GroupRef, StyleName>? endCaptures,
-      List<DefinitionItem>? Function()? innerItems,
+      List<ScopeUnit>? Function()? innerUnits,
     }
   ) {
-    var item = DefinitionItem._(
+    var unit = ScopeUnit._(
       identifier,
       isInline: false,
       baseSyntax: this,
@@ -76,30 +73,33 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
           debugName: debugName,
           innerPatterns: innerPatterns,
         ),
-      createInnerItems: () => _smartCreateInnerItems(identifier, styleName, innerItems),
+      createInnerUnits: () => _linker.linkInnerUnits(
+        innerUnits: innerUnits,
+        parentStyleName: styleName,
+        parentIdentifier: identifier,
+      ),
     );
-    _repoItems.add(item);
-    return item;
+    _repoUnits.add(unit);
+    return unit;
   }
 
-  DefinitionItem createItemInline(
+  ScopeUnit createUnitInline(
     {
       RegExpRecipe? match,
       RegExpPair? matchPair,
       Map<GroupRef, StyleName>? captures,
       Map<GroupRef, StyleName>? beginCaptures,
       Map<GroupRef, StyleName>? endCaptures,
-      List<DefinitionItem>? Function()? innerItems,
+      List<ScopeUnit>? Function()? innerUnits,
     }
   ) {
-    if (!_isComputingInnerItems) throw StateError("`createItemInline()` items can only be used inside an 'inner items' list. (Did you include one as a root item?)");
-    var parentStyleName = _parentStyleCache;
-    var parentIdentifier = _parentIdentifierCache;
-    ++_currInnerItemsCreated;
+    if (!_linker.isLinkingInnerUnits) throw StateError("`createUnitInline()` units can only be used inside an 'inner units' list. (Did you include one as a root unit?)");
+    // linker values have to be read/stored now while in a valid linking state
+    var identifier = "${_linker.parentIdentifier}.inline${_linker.countNewInline()}";
+    var styleName = _linker.parentStyle;
     
-    var identifier = "$parentIdentifier.pattern$_currInnerItemsCreated";
-    return DefinitionItem._(
-      "$parentIdentifier.pattern$_currInnerItemsCreated",
+    return ScopeUnit._(
+      identifier,
       isInline: true,
       baseSyntax: this,
       createBody: (debugName, innerPatterns) => 
@@ -110,12 +110,16 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
           beginCaptures: beginCaptures,
           endCaptures: endCaptures,
 
-          styleName: parentStyleName,
+          styleName: styleName,
 
           debugName: debugName,
           innerPatterns: innerPatterns,
         ),
-      createInnerItems: () => _smartCreateInnerItems(identifier, parentStyleName, innerItems),
+      createInnerUnits: () => _linker.linkInnerUnits(
+        innerUnits: innerUnits,
+        parentStyleName: styleName,
+        parentIdentifier: identifier,
+      ),
     );
   }
 
@@ -212,34 +216,17 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
     };
   }
 
-  Map<int, CapturePattern> _capturesAsPattern(Map<GroupRef, StyleName> captures, RegExpRecipe recipe, String itemDebugName, String captureKeyName) {
+  Map<int, CapturePattern> _capturesAsPattern(Map<GroupRef, StyleName> captures, RegExpRecipe recipe, String unitDebugName, String captureKeyName) {
     var patterns = <int, CapturePattern>{};
     for (var MapEntry(key: ref, value: styleName) in captures.entries) {
       var capturePosition = recipe.positionOf(ref);
       patterns[capturePosition] = 
         CapturePattern(
-          debugName: "$itemDebugName.$captureKeyName[$capturePosition]",
+          debugName: "$unitDebugName.$captureKeyName[$capturePosition]",
           styleName: styleName,
         );
     }
     return patterns;
-  }
-
-  List<DefinitionItem>? _smartCreateInnerItems(String identifier, StyleName? styleName, List<DefinitionItem>? Function()? innerItems) {
-    // using a style cache (and not a stack) assumes `createItem()`
-    // cannot be called in the inner items
-    _parentStyleCache = styleName;
-    _parentIdentifierCache = identifier;
-    _currInnerItemsCreated = 0;
-    _isComputingInnerItems = true;
-
-    var items = innerItems?.call();
-    
-    _isComputingInnerItems = false;
-    _parentStyleCache = null;
-    _parentIdentifierCache = "";
-    _currInnerItemsCreated = 0;
-    return items;
   }
 
   void _warnBadCollectionDeclarations() {
@@ -282,58 +269,49 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
   }
 }
 
-final class DefinitionItem {
+final class ScopeUnit {
   final SyntaxDefinition baseSyntax;
   final String identifier;
   final bool isInline;
   final Pattern Function(String debugName, List<Pattern> innerPatterns) createBody;
-  final List<DefinitionItem>? Function()? createInnerItems;
+  final List<ScopeUnit>? Function()? createInnerUnits;
 
-  DefinitionItem._(
+  ScopeUnit._(
     this.identifier,
     {
       required this.baseSyntax,
       required this.createBody,
       required this.isInline,
-      this.createInnerItems,
+      this.createInnerUnits,
     }
   );
 
-  late final innerItems = createInnerItems?.call() ?? [];
+  late final innerUnits = createInnerUnits?.call() ?? [];
 
   RepositoryItem asRepositoryItem() => _repositoryItem;
-  late final _repositoryItem = _whenInline(
-    () => throw ArgumentError.notNull("identifier"),
-    () => RepositoryItem(
+  late final _repositoryItem = !this.isInline ?
+    RepositoryItem(
       identifier: identifier,
       body: _body
-    ),
-  );
+    ) :
+    throw StateError("cannot be an inline unit");
   
-  Pattern asInnerItem() => _innerItemPattern;
-  late final _innerItemPattern = _whenInline(
-    () => _body,
-    () => IncludePattern(identifier: identifier),
-  );
+  Pattern asInnerPattern() => _innerPattern;
+  late final _innerPattern = this.isInline ? _body : IncludePattern(identifier: identifier);
 
   late final _body = createBody(
     "${baseSyntax.langName}.$identifier",
     [
-      for (var item in innerItems)
-        item.asInnerItem()
+      for (var unit in innerUnits)
+        unit.asInnerPattern()
     ],
   );
-
-  ResultT _whenInline<ResultT>(ResultT Function() isInline, ResultT Function() isNotInline) {
-    return this.isInline ? isInline() : isNotInline();
-  }
 }
 
 
 abstract interface class StyleName {
   String get scope;
 }
-
 
 final class RegExpPair {
   final RegExpRecipe begin;
@@ -347,5 +325,62 @@ extension _SymbolPrettyStrings on Symbol {
   String toPrettyString() {
     var str = toString();
     return str.substring("Symbol(\"".length, str.length - "\")".length);
+  }
+}
+
+
+final class _ScopeLinker {
+  bool _isLinkingInnerUnits = false;
+  StyleName? _parentStyle;
+  String? _parentIdentifier;
+  int? _parentNumInlines;
+
+  bool get isLinkingInnerUnits => _isLinkingInnerUnits;
+  StyleName get parentStyle {
+    _checkIsLinking();
+    return _parentStyle!;
+  }
+  String get parentIdentifier {
+    _checkIsLinking();
+    return _parentIdentifier!;
+  }
+
+  List<ScopeUnit>? linkInnerUnits({
+    required List<ScopeUnit>? Function()? innerUnits,
+    required StyleName? parentStyleName,
+    required String parentIdentifier,
+  }) {
+    var lastLinkingState = _isLinkingInnerUnits;
+    _isLinkingInnerUnits = true;
+
+    var grandparentStyle = _parentStyle;
+    _parentStyle = parentStyleName;
+
+    var grandparentIdentifier = _parentIdentifier;
+    _parentIdentifier = parentIdentifier;
+
+    var grandparentNumInlines = _parentNumInlines;
+    _parentNumInlines = 0;
+
+    var units = innerUnits?.call();
+    
+    _isLinkingInnerUnits = lastLinkingState;
+    _parentStyle = grandparentStyle;
+    _parentIdentifier = grandparentIdentifier;
+    _parentNumInlines = grandparentNumInlines;
+    return units;
+  }
+
+  int countNewInline() {
+    _checkIsLinking();
+    var newNumInlines = _parentNumInlines! + 1;
+    _parentNumInlines = newNumInlines;
+    return newNumInlines;
+  }
+
+  void _checkIsLinking() {
+    if (!isLinkingInnerUnits) {
+      throw StateError("Not currently linking units.");
+    }
   }
 }
