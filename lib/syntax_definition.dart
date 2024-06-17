@@ -302,7 +302,7 @@ final class DefinitionItem {
   RepositoryItem asRepositoryItem() => _repositoryItem;
   late final _repositoryItem = _whenInline(
     () => throw ArgumentError.notNull("identifier"),
-    (identifier) => RepositoryItem(
+    () => RepositoryItem(
       identifier: identifier,
       body: _body
     ),
@@ -311,7 +311,7 @@ final class DefinitionItem {
   Pattern asInnerItem() => _innerItemPattern;
   late final _innerItemPattern = _whenInline(
     () => _body,
-    (identifier) => IncludePattern(identifier: identifier),
+    () => IncludePattern(identifier: identifier),
   );
 
   late final _body = createBody(
@@ -322,8 +322,8 @@ final class DefinitionItem {
     ],
   );
 
-  ResultT _whenInline<ResultT>(ResultT Function() isInline, ResultT Function(String) isNotInline) {
-    return this.isInline ? isInline() : isNotInline(identifier!);
+  ResultT _whenInline<ResultT>(ResultT Function() isInline, ResultT Function() isNotInline) {
+    return this.isInline ? isInline() : isNotInline();
   }
 }
 
