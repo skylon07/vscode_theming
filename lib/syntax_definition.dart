@@ -350,24 +350,20 @@ final class _ScopeLinker {
     required StyleName? parentStyleName,
     required String parentIdentifier,
   }) {
-    var lastLinkingState = _isLinkingInnerUnits;
-    _isLinkingInnerUnits = true;
-
-    var grandparentStyle = _parentStyle;
+    // tracking a stack is not necessary since creating a layer of inner units
+    // will happen one at a time and can't happen recursively
+    // (because they're lazy factory functions)
     _parentStyle = parentStyleName;
-
-    var grandparentIdentifier = _parentIdentifier;
     _parentIdentifier = parentIdentifier;
-
-    var grandparentNumInlines = _parentNumInlines;
     _parentNumInlines = 0;
+    _isLinkingInnerUnits = true;
 
     var units = innerUnits?.call();
     
-    _isLinkingInnerUnits = lastLinkingState;
-    _parentStyle = grandparentStyle;
-    _parentIdentifier = grandparentIdentifier;
-    _parentNumInlines = grandparentNumInlines;
+    _isLinkingInnerUnits = false;
+    _parentStyle = null;
+    _parentIdentifier = null;
+    _parentNumInlines = null;
     return units;
   }
 

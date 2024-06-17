@@ -187,28 +187,35 @@ void main() {
       test("a unit with nested inline units", () {
         var parentIdentifier = "unitWithNestedInlineChildren";
         var parentStyleName = "parent";
+        var specialChildIdentifier = identifierForInline(parentIdentifier, 1);
+        var specialChild2Identifier = identifierForInline(specialChildIdentifier, 2);
         late ScopeUnit specialChild;
+        late ScopeUnit specialChild2;
         var unit = definition.createUnit(
           parentIdentifier,
           styleName: TestStyleName(parentStyleName),
-          innerUnits: () {
+          innerUnits: () => [
             specialChild = definition.createUnitInline(
               innerUnits: () => [
                 definition.createUnitInline(match: regExpBuilder.nothing),
+                specialChild2 = definition.createUnitInline(
+                  innerUnits: () => [
+                    definition.createUnitInline(match: regExpBuilder.nothing),
+                    definition.createUnitInline(match: regExpBuilder.nothing),
+                    definition.createUnitInline(match: regExpBuilder.nothing),
+                  ]
+                ),
                 definition.createUnitInline(match: regExpBuilder.nothing),
               ],
-            );
-            return [
-              specialChild,
-              definition.createUnitInline(match: regExpBuilder.nothing),
-            ];
-          },
+            ),
+            definition.createUnitInline(match: regExpBuilder.nothing),
+          ],
         );
         expectDebugNames(
           unit.asRepositoryItem().body,
           parentIdentifier,
           [
-            identifierForInline(parentIdentifier, 1),
+            specialChildIdentifier,
             identifierForInline(parentIdentifier, 2),
           ],
         );
@@ -220,19 +227,38 @@ void main() {
             parentStyleName,
           ],
         );
-        var specialChildIdentifier = identifierForInline(parentIdentifier, 1);
         expectDebugNames(
           specialChild.asInnerPattern(),
           specialChildIdentifier,
           [
             identifierForInline(specialChildIdentifier, 1),
-            identifierForInline(specialChildIdentifier, 2),
+            specialChild2Identifier,
+            identifierForInline(specialChildIdentifier, 3),
           ],
         );
         expectStyleNames(
           specialChild.asInnerPattern(),
           parentStyleName,
           [
+            parentStyleName,
+            parentStyleName,
+            parentStyleName,
+          ],
+        );
+        expectDebugNames(
+          specialChild2.asInnerPattern(),
+          specialChild2Identifier,
+          [
+            identifierForInline(specialChild2Identifier, 1),
+            identifierForInline(specialChild2Identifier, 2),
+            identifierForInline(specialChild2Identifier, 3),
+          ],
+        );
+        expectStyleNames(
+          specialChild2.asInnerPattern(),
+          parentStyleName,
+          [
+            parentStyleName,
             parentStyleName,
             parentStyleName,
           ],
@@ -244,24 +270,33 @@ void main() {
         var parentStyleName = "parent";
         var specialChildIdentifier = "unitWithNestedMixedChildren_child";
         var specialChildStyleName = "child";
+        var specialChild2Identifier = "unitWithNestedMixedChildren_child";
+        var specialChild2StyleName = "child";
         late ScopeUnit specialChild;
+        late ScopeUnit specialChild2;
         var unit = definition.createUnit(
           parentIdentifier,
           styleName: TestStyleName(parentStyleName),
-          innerUnits: () {
+          innerUnits: () => [
             specialChild = definition.createUnit(
               specialChildIdentifier,
               styleName: TestStyleName(specialChildStyleName),
               innerUnits: () => [
                 definition.createUnitInline(match: regExpBuilder.nothing),
+                specialChild2 = definition.createUnit(
+                  specialChild2Identifier,
+                  styleName: TestStyleName(specialChild2StyleName),
+                  innerUnits: () => [
+                    definition.createUnitInline(match: regExpBuilder.nothing),
+                    definition.createUnitInline(match: regExpBuilder.nothing),
+                    definition.createUnitInline(match: regExpBuilder.nothing),
+                  ]
+                ),
                 definition.createUnitInline(match: regExpBuilder.nothing),
               ],
-            );
-            return [
-              specialChild,
-              definition.createUnitInline(match: regExpBuilder.nothing),
-            ];
-          },
+            ),
+            definition.createUnitInline(match: regExpBuilder.nothing),
+          ],
         );
         expectDebugNames(
           unit.asRepositoryItem().body,
@@ -284,6 +319,7 @@ void main() {
           specialChildIdentifier,
           [
             identifierForInline(specialChildIdentifier, 1),
+            null,
             identifierForInline(specialChildIdentifier, 2),
           ],
         );
@@ -292,7 +328,26 @@ void main() {
           specialChildStyleName,
           [
             specialChildStyleName,
+            null,
             specialChildStyleName,
+          ],
+        );
+        expectDebugNames(
+          specialChild2.asRepositoryItem().body,
+          specialChild2Identifier,
+          [
+            identifierForInline(specialChild2Identifier, 1),
+            identifierForInline(specialChild2Identifier, 2),
+            identifierForInline(specialChild2Identifier, 3),
+          ],
+        );
+        expectStyleNames(
+          specialChild2.asRepositoryItem().body,
+          specialChild2StyleName,
+          [
+            specialChild2StyleName,
+            specialChild2StyleName,
+            specialChild2StyleName,
           ],
         );
       });
