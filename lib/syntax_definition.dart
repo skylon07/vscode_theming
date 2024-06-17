@@ -10,7 +10,13 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
   final bool isTextSyntax;
   final String langName;
   final List<String> fileTypes;
-  final List<DefinitionItem> _items = [];
+
+  final List<DefinitionItem> _repoItems = [];
+  bool _isComputingInnerItems = false;
+  StyleName? _parentStyleCache = null;
+  String _parentIdentifierCache = "";
+  int _currInnerItemsCreated = 0;
+
   late final CollectionT collection;
   
   SyntaxDefinition({
@@ -33,30 +39,10 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
       langName: langName,
       fileTypes: fileTypes,
       topLevelPatterns: [for (var item in rootItems) item.asInnerItem()],
-      repository: [
-        for (var itemIdx = 0; itemIdx < _items.length; ++itemIdx) 
-          _items[itemIdx].asRepositoryItem()
-      ],
+      repository: [for (var item in _repoItems) item.asRepositoryItem()],
     );
     _warnBadCollectionDeclarations();
     return body;
-  }
-
-  DefinitionItem createItemDirect(
-    String identifier,
-    {
-      required Pattern Function(String debugName, List<Pattern> innerPatterns) createBody,
-      List<DefinitionItem>? Function()? innerItems,
-    }
-  ) {
-    var item = DefinitionItem._(
-      identifier,
-      baseSyntax: this,
-      createBody: createBody,
-      calcInnerItems: innerItems,
-    );
-    _items.add(item);
-    return item;
   }
 
   DefinitionItem createItem(
@@ -65,51 +51,105 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
       StyleName? styleName,
       RegExpRecipe? match,
       RegExpPair? matchPair,
-      RegExpRecipe? begin,
-      RegExpRecipe? end,
       Map<GroupRef, StyleName>? captures,
       Map<GroupRef, StyleName>? beginCaptures,
       Map<GroupRef, StyleName>? endCaptures,
       List<DefinitionItem>? Function()? innerItems,
     }
   ) {
-    var argMap = {
-      'debugName': null, // set later
-      'styleName': styleName,
-      'match': match,
-      'begin': begin ?? matchPair?.begin,
-      'end': end ?? matchPair?.end,
-      'captures': captures,
-      'beginCaptures': beginCaptures,
-      'endCaptures': endCaptures,
-      'innerPatterns': null, // set later
-    };
-    return createItemDirect(
+    if (_isComputingInnerItems) throw StateError("`createItem()` must be called outside any inner-items lists.");
+    var item = DefinitionItem._(
       identifier,
-      createBody: (debugName, innerPatterns) {
-        argMap['debugName'] = debugName;
-        argMap['innerPatterns'] = innerPatterns;
-        return _createItem_smartBody(argMap);
-      },
-      innerItems: innerItems,
+      isInline: false,
+      baseSyntax: this,
+      createBody: (debugName, innerPatterns) => 
+        _smartCreateBody(
+          styleName: styleName,
+          match: match,
+          matchPair: matchPair,
+          captures: captures,
+          beginCaptures: beginCaptures,
+          endCaptures: endCaptures,
+          
+          debugName: debugName,
+          innerPatterns: innerPatterns,
+        ),
+      createInnerItems: () => _smartCreateInnerItems(identifier, styleName, innerItems),
+    );
+    _repoItems.add(item);
+    return item;
+  }
+
+  DefinitionItem createItemInline(
+    {
+      RegExpRecipe? match,
+      RegExpPair? matchPair,
+      Map<GroupRef, StyleName>? captures,
+      Map<GroupRef, StyleName>? beginCaptures,
+      Map<GroupRef, StyleName>? endCaptures,
+      List<DefinitionItem>? Function()? innerItems,
+    }
+  ) {
+    if (!_isComputingInnerItems) throw StateError("`createItemInline()` can only be called inside an inner items list.");
+    var parentStyleName = _parentStyleCache;
+    var parentIdentifier = _parentIdentifierCache;
+    ++_currInnerItemsCreated;
+    
+    var identifier = "$parentIdentifier.pattern$_currInnerItemsCreated";
+    return DefinitionItem._(
+      "$parentIdentifier.pattern$_currInnerItemsCreated",
+      isInline: true,
+      baseSyntax: this,
+      createBody: (debugName, innerPatterns) => 
+        _smartCreateBody(
+          match: match,
+          matchPair: matchPair,
+          captures: captures,
+          beginCaptures: beginCaptures,
+          endCaptures: endCaptures,
+
+          styleName: parentStyleName,
+
+          debugName: debugName,
+          innerPatterns: innerPatterns,
+        ),
+      createInnerItems: () => _smartCreateInnerItems(identifier, parentStyleName, innerItems),
     );
   }
 
-  Pattern _createItem_smartBody(Map<String, dynamic> argMap) =>
-    switch (argMap) {
-      {
-        'debugName': String debugName,
-        'match': RegExpRecipe match,
+  Pattern _smartCreateBody({
+    required String debugName,
+    required StyleName? styleName,
+    required RegExpRecipe? match,
+    required RegExpPair? matchPair,
+    required Map<GroupRef, StyleName>? captures,
+    required Map<GroupRef, StyleName>? beginCaptures,
+    required Map<GroupRef, StyleName>? endCaptures,
+    required List<Pattern>? innerPatterns,
+  }) {
+    var args = (
+      debugName: debugName,
+      styleName: styleName,
+      match: match,
+      matchPair: matchPair,
+      captures: captures,
+      beginCaptures: beginCaptures,
+      endCaptures: endCaptures,
+      innerPatterns: innerPatterns,
+    );
+    return switch (args) {
+      (
+        debugName: String debugName,
+        match: RegExpRecipe match,
 
-        'styleName': StyleName? styleName,
-        'captures': Map<GroupRef, StyleName>? captures,
+        styleName: StyleName? styleName,
+        captures: Map<GroupRef, StyleName>? captures,
         
-        'begin': null,
-        'end': null,
-        'beginCaptures': null,
-        'endCaptures': null,
-        'innerPatterns': null || [],
-      } => 
+        matchPair: null,
+        beginCaptures: null,
+        endCaptures: null,
+        innerPatterns: null || [],
+       ) => 
         MatchPattern(
           debugName: debugName,
           styleName: styleName,
@@ -120,48 +160,46 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
             : const {},
         ),
 
-      {
-        'debugName': String debugName,
-        'begin': RegExpRecipe begin,
-        'end': RegExpRecipe end,
+      (
+        debugName: String debugName,
+        matchPair: RegExpPair matchPair,
 
-        'styleName': StyleName? styleName,
-        'beginCaptures': Map<GroupRef, StyleName>? beginCaptures,
-        'endCaptures': Map<GroupRef, StyleName>? endCaptures,
-        'innerPatterns': List<Pattern>? innerPatterns,
+        styleName: StyleName? styleName,
+        beginCaptures: Map<GroupRef, StyleName>? beginCaptures,
+        endCaptures: Map<GroupRef, StyleName>? endCaptures,
+        innerPatterns: List<Pattern>? innerPatterns,
 
-        'match': null,
-        'captures': null,
-      } =>
+        match: null,
+        captures: null,
+      ) =>
         EnclosurePattern(
           debugName: debugName,
           styleName: styleName,
           innerPatterns: innerPatterns ?? [],
-          begin: begin.compile(),
-          end: end.compile(),
+          begin: matchPair.begin.compile(),
+          end: matchPair.end.compile(),
           beginCaptures:
             (beginCaptures != null)? 
-              _capturesAsPattern(beginCaptures, begin, debugName, "beginCaptures")
+              _capturesAsPattern(beginCaptures, matchPair.begin, debugName, "beginCaptures")
             : const {},
           endCaptures:
             (endCaptures != null)? 
-              _capturesAsPattern(endCaptures, end, debugName, "endCaptures")
+              _capturesAsPattern(endCaptures, matchPair.end, debugName, "endCaptures")
             : const {},
         ),
 
-      {
-        'debugName': String debugName,
-        'innerPatterns': List<Pattern> innerPatterns,
+      (
+        debugName: String debugName,
+        innerPatterns: List<Pattern> innerPatterns,
 
-        'styleName': StyleName? styleName,
+        styleName: StyleName? styleName,
 
-        'match': null,
-        'begin': null,
-        'end': null,
-        'captures': null,
-        'beginCaptures': null,
-        'endCaptures': null,
-      } when innerPatterns.isNotEmpty =>
+        match: null,
+        matchPair: null,
+        captures: null,
+        beginCaptures: null,
+        endCaptures: null,
+       ) when innerPatterns.isNotEmpty =>
         GroupingPattern(
           debugName: debugName,
           styleName: styleName,
@@ -170,6 +208,7 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
       
       _ => throw ArgumentError("Invalid argument pattern."),
     };
+  }
 
   Map<int, CapturePattern> _capturesAsPattern(Map<GroupRef, StyleName> captures, RegExpRecipe recipe, String itemDebugName, String captureKeyName) {
     var patterns = <int, CapturePattern>{};
@@ -182,6 +221,23 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
         );
     }
     return patterns;
+  }
+
+  List<DefinitionItem>? _smartCreateInnerItems(String identifier, StyleName? styleName, List<DefinitionItem>? Function()? innerItems) {
+    // using a style cache (and not a stack) assumes `createItem()`
+    // cannot be called in the inner items
+    _parentStyleCache = styleName;
+    _parentIdentifierCache = identifier;
+    _currInnerItemsCreated = 0;
+    _isComputingInnerItems = true;
+
+    var items = innerItems?.call();
+    
+    _isComputingInnerItems = false;
+    _parentStyleCache = null;
+    _parentIdentifierCache = "";
+    _currInnerItemsCreated = 0;
+    return items;
   }
 
   void _warnBadCollectionDeclarations() {
@@ -226,20 +282,22 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
 
 final class DefinitionItem {
   final SyntaxDefinition baseSyntax;
-  final String? identifier;
+  final String identifier;
+  final bool isInline;
   final Pattern Function(String debugName, List<Pattern> innerPatterns) createBody;
-  final List<DefinitionItem>? Function()? calcInnerItems;
+  final List<DefinitionItem>? Function()? createInnerItems;
 
   DefinitionItem._(
     this.identifier,
     {
       required this.baseSyntax,
       required this.createBody,
-      this.calcInnerItems,
+      required this.isInline,
+      this.createInnerItems,
     }
   );
 
-  late final innerItems = calcInnerItems?.call() ?? [];
+  late final innerItems = createInnerItems?.call() ?? [];
 
   RepositoryItem asRepositoryItem() => _repositoryItem;
   late final _repositoryItem = _whenInline(
@@ -265,9 +323,7 @@ final class DefinitionItem {
   );
 
   ResultT _whenInline<ResultT>(ResultT Function() isInline, ResultT Function(String) isNotInline) {
-    final identifier = this.identifier;
-    var inline = identifier == null;
-    return inline ? isInline() : isNotInline(identifier);
+    return this.isInline ? isInline() : isNotInline(identifier!);
   }
 }
 
