@@ -39,7 +39,10 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
       langName: langName,
       fileTypes: fileTypes,
       topLevelPatterns: [for (var item in rootItems) item.asInnerItem()],
-      repository: [for (var item in _repoItems) item.asRepositoryItem()],
+      repository: [
+        for (var itemIdx = 0; itemIdx < _repoItems.length; ++itemIdx) 
+          _repoItems[itemIdx].asRepositoryItem()
+      ],
     );
     _warnBadCollectionDeclarations();
     return body;
@@ -57,7 +60,6 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
       List<DefinitionItem>? Function()? innerItems,
     }
   ) {
-    if (_isComputingInnerItems) throw StateError("`createItem()` must be called outside any inner-items lists.");
     var item = DefinitionItem._(
       identifier,
       isInline: false,
@@ -90,7 +92,7 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
       List<DefinitionItem>? Function()? innerItems,
     }
   ) {
-    if (!_isComputingInnerItems) throw StateError("`createItemInline()` can only be called inside an inner items list.");
+    if (!_isComputingInnerItems) throw StateError("`createItemInline()` items can only be used inside an 'inner items' list. (Did you include one as a root item?)");
     var parentStyleName = _parentStyleCache;
     var parentIdentifier = _parentIdentifierCache;
     ++_currInnerItemsCreated;
