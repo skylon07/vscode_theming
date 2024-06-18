@@ -55,7 +55,7 @@ void main() {
         );
       }
 
-      void expectStyleNames(Pattern parent, String parentStyleName, List<String?> childStyleNames) {
+      void expectStyleNames(Pattern parent, String? parentStyleName, List<String?> childStyleNames) {
         expect(parent, isA<GroupingPattern>());
         var itemBody = parent as GroupingPattern;
         expect(itemBody.styleName?.scope, equals(parentStyleName));
@@ -88,6 +88,20 @@ void main() {
         var unit = definition.createUnit(
           parentIdentifier,
           styleName: TestStyleName(parentStyleName),
+          innerUnits: () => [
+            definition.createUnitInline(match: regExpBuilder.nothing),
+          ],
+        );
+        expectDebugNames(unit.asRepositoryItem().body, parentIdentifier, [identifierForInline(parentIdentifier, 1)]);
+        expectStyleNames(unit.asRepositoryItem().body, parentStyleName, [parentStyleName]);
+      });
+
+      test("a unit with an inline unit (without a style name)", () {
+        var parentIdentifier = "unitWithInlineChild";
+        var parentStyleName = null;
+        var unit = definition.createUnit(
+          parentIdentifier,
+          styleName: parentStyleName,
           innerUnits: () => [
             definition.createUnitInline(match: regExpBuilder.nothing),
           ],

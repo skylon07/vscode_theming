@@ -335,16 +335,6 @@ final class _ScopeLinker {
   String? _parentIdentifier;
   int? _parentNumInlines;
 
-  bool get isLinkingInnerUnits => _isLinkingInnerUnits;
-  StyleName get parentStyle {
-    _checkIsLinking();
-    return _parentStyle!;
-  }
-  String get parentIdentifier {
-    _checkIsLinking();
-    return _parentIdentifier!;
-  }
-
   List<ScopeUnit>? linkInnerUnits({
     required List<ScopeUnit>? Function()? innerUnits,
     required StyleName? parentStyleName,
@@ -367,6 +357,16 @@ final class _ScopeLinker {
     return units;
   }
 
+  bool get isLinkingInnerUnits => _isLinkingInnerUnits;
+  StyleName? get parentStyle {
+    _checkIsLinking();
+    return _parentStyle;
+  }
+  String get parentIdentifier {
+    _checkIsLinking();
+    return _parentIdentifier!;
+  }
+  
   int countNewInline() {
     _checkIsLinking();
     var newNumInlines = _parentNumInlines! + 1;
