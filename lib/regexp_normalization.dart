@@ -53,7 +53,7 @@ extension _RecipeTraversal on RegExpRecipe {
   }
 }
 
-TransformFn _transform_pruneAheadIs(RegExpRecipe rootRecipe) {
+TransformFn _transform_spliceOutAheadIs(RegExpRecipe rootRecipe) {
   var sourcesToCheck = <RegExpRecipe>{rootRecipe, rootRecipe.sources.first};
   return (recipe) {
     if (!sourcesToCheck.contains(recipe)) return null;
@@ -182,7 +182,7 @@ InvertibleRegExpRecipe? _combineCharClasses(List<InvertibleRegExpRecipe> recipes
 RegExpRecipe _normalizeBehindIsNot(AugmentedRegExpRecipe recipe) {
   var useAlternateRecipe = false;
   recipe.traverseTransformAll([
-    _transform_pruneAheadIs(recipe),
+    _transform_spliceOutAheadIs(recipe),
     (source) {
       switch (source.tag) {
         case RegExpTag.capture:
@@ -220,7 +220,7 @@ RegExpRecipe _normalizeBehindIsNot(AugmentedRegExpRecipe recipe) {
 
 RegExpRecipe _normalizeBehindIs(AugmentedRegExpRecipe recipe) {
   return recipe.traverseTransformAll([
-    _transform_pruneAheadIs(recipe),
+    _transform_spliceOutAheadIs(recipe),
     (source) {
       switch (source.tag) {
         case RegExpTag.aheadIs: {
