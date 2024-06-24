@@ -85,6 +85,7 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
 
   ScopeUnit createUnitInline(
     {
+      StyleName? styleName,
       RegExpRecipe? match,
       RegExpPair? matchPair,
       Map<GroupRef, StyleName>? captures,
@@ -96,7 +97,7 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
     if (!_linker.isLinkingInnerUnits) throw StateError("`createUnitInline()` units can only be used inside an 'inner units' list. (Did you include one as a root unit?)");
     // linker values have to be read/stored now while in a valid linking state
     var identifier = "${_linker.parentIdentifier}.inline${_linker.countNewInline()}";
-    var styleName = _linker.parentStyle;
+    var resolvedStyleName = styleName ?? _linker.parentStyle;
     
     return ScopeUnit._(
       identifier,
@@ -110,14 +111,14 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
           beginCaptures: beginCaptures,
           endCaptures: endCaptures,
 
-          styleName: styleName,
+          styleName: resolvedStyleName,
 
           debugName: debugName,
           innerPatterns: innerPatterns,
         ),
       createInnerUnits: () => _linker.linkInnerUnits(
         innerUnits: innerUnits,
-        parentStyleName: styleName,
+        parentStyleName: resolvedStyleName,
         parentIdentifier: identifier,
       ),
     );
