@@ -224,9 +224,7 @@ void main() {
             ])
           )
           .compile();
-        // TODO: change to this when capture simplification is implemented
-        // expect(result, equals("(?!(?<=abc|def))"));
-        expect(result, equals("(?!(?<=(abc|def)))"));
+        expect(result, equals("(?!(?<=abc|def))"));
       });
       test("those with `concat` clauses inside them", () {
         var result = builder
@@ -237,9 +235,7 @@ void main() {
             ])
           )
           .compile();
-        // TODO: change to this when capture simplification is implemented
-        // expect(result, equals("(?<!abcdef)"));
-        expect(result, equals("(?!(?<=(abcdef)))"));
+        expect(result, equals("(?<!abcdef)"));
       });
     });
   });
