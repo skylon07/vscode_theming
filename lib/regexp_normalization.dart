@@ -4,9 +4,11 @@ import './regexp_builder_base.dart';
 
 RegExpRecipe normalize(RegExpRecipe recipe) {
   return switch (recipe) {
-    JoinedRegExpRecipe(tag: RegExpTag.either) => _normalizeEither(recipe),
+    JoinedRegExpRecipe(tag: RegExpTag.either)         => _normalizeEither(recipe),
     AugmentedRegExpRecipe(tag: RegExpTag.behindIsNot) => _normalizeBehindIsNot(recipe),
-    AugmentedRegExpRecipe(tag: RegExpTag.behindIs) => _normalizeBehindIs(recipe),
+    AugmentedRegExpRecipe(tag: RegExpTag.behindIs)    => _normalizeBehindIs(recipe),
+    AugmentedRegExpRecipe(tag: RegExpTag.aheadIsNot)  => _normalizeAheadIsNot(recipe),
+    AugmentedRegExpRecipe(tag: RegExpTag.aheadIs)     => _normalizeAheadIs(recipe),
     _ => recipe,
   };
 }
@@ -250,4 +252,14 @@ RegExpRecipe _normalizeBehindIs(AugmentedRegExpRecipe recipe) {
   ]);
 }
 
-// TODO: normalize redundant capture()s, checking for reused refs along the way
+
+RegExpRecipe _normalizeAheadIsNot(AugmentedRegExpRecipe recipe) {
+  return recipe.traverseTransform(_transform_spliceOutCapture);
+}
+
+
+RegExpRecipe _normalizeAheadIs(AugmentedRegExpRecipe recipe) {
+  return recipe.traverseTransform(_transform_spliceOutCapture);
+}
+
+// TODO: normalize redundant/nested capture()s, checking for reused refs along the way
