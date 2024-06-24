@@ -9,7 +9,7 @@ abstract base class RegExpBuilder<CollectionT> {
   // base/fundamental recipe creation functions
 
   RegExpRecipe exactly(String string) => 
-    _escapedPattern(string, RegExp(r"[.?*+\-()\[\]{}\^$|]"));
+    _escapedPattern(string, RegExp(r"[.?*+\-()\[\]{}\^$|\\]"));
 
   RegExpRecipe _escapedPattern(String exprStr, RegExp? escapeExpr) {
     String expr;
