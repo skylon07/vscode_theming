@@ -68,6 +68,47 @@ void main() {
       expect(recipe.positionOf(ref3), equals(5));
       expect(recipe.positionOf(ref4), equals(6));
     });
+
+    test("recipes that optimize out capture groups", () {
+      var ref1 = GroupRef();
+      var ref2 = GroupRef();
+      var ref3 = GroupRef();
+      var ref4 = GroupRef();
+      var ref5 = GroupRef();
+      var recipe = builder.concat([
+        builder.capture(
+          builder.exactly("asdf"),
+          ref1
+        ),
+        builder.behindIsNot(
+          builder.capture(
+            builder.exactly("NONO"),
+            ref2
+          )
+        ),
+        builder.capture(
+          builder.exactly("123"),
+          ref3,
+        ),
+        builder.exactly("456"),
+        builder.aheadIs(
+          builder.capture(
+            builder.exactly("YESYES"),
+            ref4,
+          )
+        ),
+        builder.capture(
+          builder.exactly("the_end"),
+          ref5,
+        ),
+      ]);
+      expect(recipe.compile(), equals("((asdf)(?<!NONO)(123)456(?=YESYES)(the_end))"));
+      expect(recipe.positionOf(ref1), equals(2));
+      expect(() => recipe.positionOf(ref2), throwsArgumentError);
+      expect(recipe.positionOf(ref3), equals(3));
+      expect(() => recipe.positionOf(ref4), throwsArgumentError);
+      expect(recipe.positionOf(ref5), equals(4));
+    });
   });
 
 

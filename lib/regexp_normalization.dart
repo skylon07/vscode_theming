@@ -84,6 +84,17 @@ TransformFn _transform_spliceOutAheadIs(RegExpRecipe rootRecipe) {
   };
 }
 
+TransformFn _transform_spliceOutCapture(RegExpRecipe rootRecipe) {
+  var capturesToSplice = {
+    for (var source in rootRecipe.sources)
+      if (source case AugmentedRegExpRecipe(tag: RegExpTag.capture)) source
+  };
+  return (RegExpRecipe recipe) {
+    return capturesToSplice.contains(recipe) ? 
+      (recipe as AugmentedRegExpRecipe).source : recipe;
+  };
+}
+
 
 final class RecipeConfigurationError extends Error {
   final RegExpRecipe topRecipe;
@@ -221,6 +232,7 @@ RegExpRecipe _normalizeBehindIsNot(AugmentedRegExpRecipe recipe) {
 RegExpRecipe _normalizeBehindIs(AugmentedRegExpRecipe recipe) {
   return recipe.traverseTransformAll([
     _transform_spliceOutAheadIs(recipe),
+    _transform_spliceOutCapture(recipe),
     (source) {
       switch (source.tag) {
         case RegExpTag.aheadIs: {
