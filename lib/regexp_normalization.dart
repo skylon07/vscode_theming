@@ -15,8 +15,11 @@ RegExpRecipe normalize(RegExpRecipe recipe) {
 
 
 typedef TransformFn = RegExpRecipe? Function(RegExpRecipe);
+typedef TransformBinder = TransformFn Function(RegExpRecipe);
 extension _RecipeTraversal on RegExpRecipe {
-  RegExpRecipe traverseTransform(TransformFn transform) {
+  RegExpRecipe traverseTransform(TransformBinder binder) {
+    var transform = binder(this);
+
     RegExpRecipe? prevRecipe = null;
     RegExpRecipe newRecipe = this;
     while (newRecipe != prevRecipe) {
@@ -28,14 +31,14 @@ extension _RecipeTraversal on RegExpRecipe {
     
     switch (newRecipe) {
       case AugmentedRegExpRecipe(:var source): {
-        var newSource = source.traverseTransform(transform);
+        var newSource = source.traverseTransform((_) => transform);
         newRecipe = newRecipe.copy(source: newSource);
       }
 
       case JoinedRegExpRecipe(:var sources): {
         var newSources = [
           for (var source in sources)
-            source.traverseTransform(transform)
+            source.traverseTransform((_) => transform)
         ];
         newRecipe = newRecipe.copy(sources: newSources);
       }
@@ -46,7 +49,7 @@ extension _RecipeTraversal on RegExpRecipe {
     return newRecipe;
   }
 
-  RegExpRecipe traverseTransformAll(Iterable<TransformFn> transforms) {
+  RegExpRecipe traverseTransformAll(Iterable<TransformBinder> transforms) {
     var newRecipe = this;
     for (var transform in transforms) {
       newRecipe = newRecipe.traverseTransform(transform);
@@ -54,6 +57,8 @@ extension _RecipeTraversal on RegExpRecipe {
     return newRecipe;
   }
 }
+
+TransformBinder pureTransform(TransformFn transform) => (_) => transform;
 
 TransformFn _transform_spliceOutAheadIs(RegExpRecipe rootRecipe) {
   var sourcesToCheck = <RegExpRecipe>{rootRecipe, rootRecipe.sources.first};
@@ -87,13 +92,16 @@ TransformFn _transform_spliceOutAheadIs(RegExpRecipe rootRecipe) {
 }
 
 TransformFn _transform_spliceOutCapture(RegExpRecipe rootRecipe) {
-  var capturesToSplice = {
+  var capturesToSplice = <AugmentedRegExpRecipe?>{
     for (var source in rootRecipe.sources)
       if (source case AugmentedRegExpRecipe(tag: RegExpTag.capture)) source
   };
   return (RegExpRecipe recipe) {
-    return capturesToSplice.contains(recipe) ? 
-      (recipe as AugmentedRegExpRecipe).source : recipe;
+    var captureSource = capturesToSplice.firstWhere(
+      (capture) => capture == recipe,
+      orElse: () => null,
+    )?.source;
+    return captureSource ?? recipe;
   };
 }
 
@@ -150,7 +158,7 @@ EitherFlatClasses _flattenEither(JoinedRegExpRecipe recipe) {
   var notCharsList = <InvertibleRegExpRecipe>[];
   var restList = <RegExpRecipe>[];
 
-  recipe.traverseTransform((source) {
+  recipe.traverseTransform(pureTransform((source) {
     switch (source) {
       case InvertibleRegExpRecipe(tag: RegExpTag.chars, inverted: false): {
         charsList.add(source);
@@ -169,7 +177,7 @@ EitherFlatClasses _flattenEither(JoinedRegExpRecipe recipe) {
         return null;
       }
     }
-  });
+  }));
   return (charsList, notCharsList, restList);
 }
 
@@ -194,9 +202,10 @@ InvertibleRegExpRecipe? _combineCharClasses(List<InvertibleRegExpRecipe> recipes
 
 RegExpRecipe _normalizeBehindIsNot(AugmentedRegExpRecipe recipe) {
   var useAlternateRecipe = false;
-  recipe.traverseTransformAll([
-    _transform_spliceOutAheadIs(recipe),
-    (source) {
+  var normalizedRecipe = recipe.traverseTransformAll([
+    _transform_spliceOutAheadIs,
+    _transform_spliceOutCapture,
+    pureTransform((source) {
       switch (source.tag) {
         case RegExpTag.capture:
         case RegExpTag.either: {
@@ -214,7 +223,7 @@ RegExpRecipe _normalizeBehindIsNot(AugmentedRegExpRecipe recipe) {
 
         default: return source;
       }
-    },
+    }),
   ]);
 
   if (useAlternateRecipe) {
@@ -226,16 +235,16 @@ RegExpRecipe _normalizeBehindIsNot(AugmentedRegExpRecipe recipe) {
       )
     );
   } else {
-    return recipe;
+    return normalizedRecipe;
   }
 }
 
 
 RegExpRecipe _normalizeBehindIs(AugmentedRegExpRecipe recipe) {
   return recipe.traverseTransformAll([
-    _transform_spliceOutAheadIs(recipe),
-    _transform_spliceOutCapture(recipe),
-    (source) {
+    _transform_spliceOutAheadIs,
+    _transform_spliceOutCapture,
+    pureTransform((source) {
       switch (source.tag) {
         case RegExpTag.aheadIs: {
           throw RecipeConfigurationError(recipe, source, "only allowed in the last position of this expression");
@@ -248,7 +257,7 @@ RegExpRecipe _normalizeBehindIs(AugmentedRegExpRecipe recipe) {
 
         default: return source;
       }
-    }
+    }),
   ]);
 }
 
