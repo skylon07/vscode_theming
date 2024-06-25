@@ -6,6 +6,7 @@ import './syntax_definition.dart';
 abstract base class RegExpBuilder<CollectionT> {
   CollectionT createCollection();
 
+
   // base/fundamental recipe creation functions
 
   RegExpRecipe exactly(String string) => 
@@ -31,6 +32,7 @@ abstract base class RegExpBuilder<CollectionT> {
     return normalize(InvertibleRegExpRecipe(baseRecipe, augment, inverted: invert, tag: RegExpTag.chars));
   }
 
+
   // basic composition operations
 
   RegExpRecipe capture(RegExpRecipe inner, [GroupRef? ref]) {
@@ -49,6 +51,12 @@ abstract base class RegExpBuilder<CollectionT> {
     if (recipes.isEmpty) throw ArgumentError("Joining list should not be empty.", "recipes"); 
     return normalize(JoinedRegExpRecipe(recipes, joinBy, tag: tag));
   }
+
+
+  // "constant" recipies
+
+  late final nothing = exactly("");
+  late final anything = _escapedPattern(".", null);
 
 
   // repitition and optionality
@@ -76,8 +84,6 @@ abstract base class RegExpBuilder<CollectionT> {
 
   RegExpRecipe either(List<RegExpRecipe> branches) =>
     capture(_join(branches, joinBy: r"|", tag: RegExpTag.either));
-
-  late final nothing = exactly("");
 
 
   // "look around" operations
