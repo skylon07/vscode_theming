@@ -27,6 +27,14 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
   }
 
   List<ScopeUnit> get rootUnits;
+  late final self = ScopeUnit._(
+    r"$self",
+    isStandardRef: false,
+    
+    baseSyntax: this,
+    createBody: (_, __) => throw UnimplementedError(r"$self has no body"),
+    isInline: false,
+  );
 
   late final mainBody = _createMainBody();
   MainBody _createMainBody() {
@@ -276,6 +284,7 @@ final class ScopeUnit {
   final bool isInline;
   final Pattern Function(String debugName, List<Pattern> innerPatterns) createBody;
   final List<ScopeUnit>? Function()? createInnerUnits;
+  final bool _isStandardRef;
 
   ScopeUnit._(
     this.identifier,
@@ -284,8 +293,9 @@ final class ScopeUnit {
       required this.createBody,
       required this.isInline,
       this.createInnerUnits,
+      bool isStandardRef = true,
     }
-  );
+  ) : _isStandardRef = isStandardRef;
 
   late final innerUnits = createInnerUnits?.call() ?? [];
 
@@ -298,7 +308,7 @@ final class ScopeUnit {
     throw StateError("cannot be an inline unit");
   
   Pattern asInnerPattern() => _innerPattern;
-  late final _innerPattern = this.isInline ? _body : IncludePattern(identifier: identifier);
+  late final _innerPattern = this.isInline ? _body : IncludePattern(identifier: identifier, isRepoItemRef: _isStandardRef);
 
   late final _body = createBody(
     "${baseSyntax.langName}.$identifier",

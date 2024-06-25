@@ -200,15 +200,16 @@ final class EnclosurePattern extends GroupingPattern {
 
 final class IncludePattern extends Pattern {
   final String identifier;
+  final bool _shouldTreatAsReference;
 
-  const IncludePattern({required this.identifier, super.debugName = ""});
+  const IncludePattern({required this.identifier, super.debugName = "", bool isRepoItemRef = true}) :
+    _shouldTreatAsReference = isRepoItemRef;
 
   @override
   Map toJson() {
-    var shouldTreatAsReference = identifier.isNotEmpty && identifier[0] != "%";
     return {
       ...super.toJson(),
-      'include': shouldTreatAsReference ? "#$identifier" : identifier.substring(1),
+      'include': _shouldTreatAsReference ? "#$identifier" : identifier,
     };
   }
 }
