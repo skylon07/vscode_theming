@@ -369,9 +369,9 @@ r"""
         );
       });
 
-      test("those with an escaped identifier", () {
+      test("those with a non-repository identifier", () {
         var result = SyntaxPrinter.instance.print(
-          IncludePattern(identifier: "%do-this-exactly")
+          IncludePattern(identifier: "do-this-exactly", isRepoItemRef: false)
         );
         expect(
           result,
