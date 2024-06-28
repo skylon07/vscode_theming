@@ -1,6 +1,7 @@
 import 'package:test/test.dart';
 
 import '../lib/vscode_theming.dart';
+import '../lib/regexp_normalization.dart';
 
 
 var builder = regExpBuilder;
@@ -205,14 +206,6 @@ void main() {
       });
     });
 
-    // TODO: add tests for
-    //  - behindIs/Not(aheadIsNot) throws errors
-    //  - behindIs(behindIsNot) throws errors
-    //  - behindIsNot(behindIs) does NOT throw errors
-    //  - behindIs/Not(concat(..., aheadIs)) prunes aheadIs nodes
-    //  - behindIs/Not(concat(aheadIs, ...)) throws errors
-    //  - behindIsNot transforms correctly to aheadIsNot(behindIs)
-
 
     group("`behindIsNot` patterns, like", () {
       test("those with `either` clauses inside them", () {
@@ -226,6 +219,7 @@ void main() {
           .compile();
         expect(result, equals("(?!(?<=abc|def))"));
       });
+
       test("those with `concat` clauses inside them", () {
         var result = builder
           .behindIsNot(
@@ -236,6 +230,131 @@ void main() {
           )
           .compile();
         expect(result, equals("(?<!abcdef)"));
+      });
+
+      test("those with `behindIs` clauses inside them", () {
+        var result = builder
+          .behindIsNot(
+            builder.concat([
+              builder.exactly("abc"),
+              builder.behindIs(
+                builder.exactly("de:abc")
+              ),
+            ]),
+          )
+          .compile();
+        expect(result, equals("(?<!abc(?<=de:abc))"));
+      });
+
+      test("those with prunable `aheadIs` clauses inside them", () {
+        var result = builder
+          .behindIsNot(
+            builder.concat([
+              builder.exactly("abc"),
+              builder.aheadIs(
+                builder.exactly("de:abc")
+              ),
+            ]),
+          )
+          .compile();
+        expect(result, equals("(?<!abcde:abc)"));
+      });
+
+      test("those with erroneous `aheadIs` clauses inside them", () {
+        expect(
+          () {
+            builder.behindIsNot(
+              builder.concat([
+                builder.aheadIs(
+                  builder.exactly("invalid lookahead!")
+                ),
+                builder.exactly("abc"),
+              ])
+            );
+          }, 
+          throwsA(isA<RecipeConfigurationError>())
+        );
+      });
+
+      test("those with erroneous `aheadIsNot` clauses inside them", () {
+        expect(
+          () {
+            builder.behindIsNot(
+              builder.concat([
+                builder.exactly("abc"),
+                builder.aheadIsNot(
+                  builder.exactly("check behind is not me!")
+                ),
+              ])
+            );
+          },
+          throwsA(isA<RecipeConfigurationError>())
+        );
+      });
+    });
+
+
+    group("`behindIs` patterns, like", () {
+      test("those with erroneous `aheadIsNot` clauses inside them", () {
+        expect(
+          () {
+            builder.behindIs(
+              builder.concat([
+                builder.exactly("abc"),
+                builder.aheadIsNot(
+                  builder.exactly("check ahead is not me!")
+                ),
+              ])
+            );
+          }, 
+          throwsA(isA<RecipeConfigurationError>())
+        );
+      });
+
+      test("those with erroneous `behindIsNot` clauses inside them", () {
+        expect(
+          () {
+            builder.behindIs(
+              builder.concat([
+                builder.exactly("abc"),
+                builder.behindIsNot(
+                  builder.exactly("check behind is not me!")
+                ),
+              ]),
+            );
+          },
+          throwsA(isA<RecipeConfigurationError>())
+        );
+      });
+
+      test("those with prunable `aheadIs` clauses inside them", () {
+        var result = builder
+          .behindIs(
+            builder.concat([
+              builder.exactly("abc"),
+              builder.aheadIs(
+                builder.exactly("de:abc")
+              ),
+            ]),
+          )
+          .compile();
+        expect(result, equals("(?<=abcde:abc)"));
+      });
+
+      test("those with erroneous `aheadIs` clauses inside them", () {
+        expect(
+          () {
+            builder.behindIs(
+              builder.concat([
+                builder.aheadIs(
+                  builder.exactly("invalid lookahead!")
+                ),
+                builder.exactly("abc"),
+              ])
+            );
+          },
+          throwsA(isA<RecipeConfigurationError>())
+        );
       });
     });
   });
