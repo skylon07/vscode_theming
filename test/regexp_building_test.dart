@@ -127,7 +127,7 @@ void main() {
     group("`chars` patterns, like", () {
       test("ones with ranges characters", () {
         var result = builder
-          .chars("a-z")
+          .chars("a..z")
           .compile();
         expect(result, equals(r"[a-z]"));
       });
@@ -136,7 +136,7 @@ void main() {
         var result = builder
           .chars("a-z/[^-^]")
           .compile();
-        expect(result, equals(r"[a-z\/\[\^-\^\]]"));
+        expect(result, equals(r"[a\-z\/\[\^\-\^\]]"));
       });
 
       test("ones that are inverted escaped characters", () {
@@ -177,7 +177,7 @@ void main() {
         var result = builder
           .either([
             builder.chars("123"),
-            builder.chars("a-c"),
+            builder.chars("a..c"),
           ])
           .compile();
         expect(result, equals("([123a-c])"));
@@ -187,7 +187,7 @@ void main() {
         var result = builder
           .either([
             builder.notChars("123"),
-            builder.notChars("a-c"),
+            builder.notChars("a..c"),
           ])
           .compile();
         expect(result, equals("([^123a-c])"));
@@ -197,9 +197,9 @@ void main() {
         var result = builder
           .either([
             builder.notChars("123"),
-            builder.chars("a-c"),
+            builder.chars("a..c"),
             builder.notChars("456"),
-            builder.chars("d-g"),
+            builder.chars("d..g"),
           ])
           .compile();
         expect(result, equals("([a-cd-g]|[^123456])"));

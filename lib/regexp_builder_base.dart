@@ -27,8 +27,8 @@ abstract base class RegExpBuilder<CollectionT> {
   RegExpRecipe notChars(String charSet) => _chars(charSet, invert: true);
 
   RegExpRecipe _chars(String charSet, {bool invert = false}) {
-    var baseRecipe = _escapedPattern(charSet, RegExp(r"[\[\]\^\/]"));
-    var augment = (expr) => "[${invert ? "^":""}$expr]";
+    var baseRecipe = _escapedPattern(charSet, RegExp(r"[\[\]\^\/\-]"));
+    var augment = (expr) => "[${invert ? "^":""}${expr.replaceAll("..", "-")}]";
     return normalize(InvertibleRegExpRecipe(baseRecipe, augment, inverted: invert, tag: RegExpTag.chars));
   }
 
@@ -161,7 +161,7 @@ abstract base class RegExpBuilder<CollectionT> {
     ]);
   }
 
-  late final _nonWordChar = notChars(r"a-zA-Z0-9_$"); // dart chars -- should work for most languages
+  late final _nonWordChar = notChars(r"a..zA..Z0..9_$"); // dart chars -- should work for most languages
 }
 
 
