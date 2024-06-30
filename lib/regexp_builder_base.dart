@@ -152,12 +152,13 @@ abstract base class RegExpBuilder<CollectionT> {
     return concat([
       behindIs(either([
         startsWith(nothing),
-        space(req: true),
+        _nonWordChar,
       ])),
-      either([
-        concat([inner, aheadIs(_nonWordChar)]),
-        endsWith(inner),
-      ]),
+      inner,
+      aheadIs(either([
+        _nonWordChar,
+        endsWith(nothing),
+      ])),
     ]);
   }
 
