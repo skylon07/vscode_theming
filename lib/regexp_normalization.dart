@@ -149,6 +149,8 @@ RegExpRecipe _normalizeEither(JoinedRegExpRecipe recipe) {
   var (chars, notChars, rest) = _flattenEither(recipe);
   var charClass = _combineCharClasses(chars);
   var notCharClass = _combineCharClasses(notChars);
+  // TODO: this thinks capture(either(chars(...))) is a "rest"; it should instead combine all of them
+  //  (add a test for it too)
   return recipe.copy(
     sources: [
       if (charClass != null) charClass,
