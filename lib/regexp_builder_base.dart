@@ -70,13 +70,13 @@ abstract base class RegExpBuilder<CollectionT> {
   RegExpRecipe oneOrMore(RegExpRecipe inner) =>
     _augment(inner, (expr) => "$expr+");
 
-  RegExpRecipe repeatEqual(RegExpRecipe inner, int times) =>
+  RegExpRecipe repeatEqual(int times, RegExpRecipe inner) =>
     _augment(inner, (expr) => "$expr{$times}");
     
-  RegExpRecipe repeatAtLeast(RegExpRecipe inner, int times) =>
+  RegExpRecipe repeatAtLeast(int times, RegExpRecipe inner) =>
     _augment(inner, (expr) => "$expr{$times,}");
 
-  RegExpRecipe repeatAtMost(RegExpRecipe inner, int times) =>
+  RegExpRecipe repeatAtMost(int times, RegExpRecipe inner) =>
     _augment(inner, (expr) => "$expr{,$times}");
 
   RegExpRecipe repeatBetween(RegExpRecipe inner, int lowTimes, int highTimes) =>
