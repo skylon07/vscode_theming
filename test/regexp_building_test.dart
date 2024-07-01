@@ -260,6 +260,23 @@ void main() {
         expect(result, equals("(?<!abcde:abc)"));
       });
 
+      test("those with prunable (and more complicated) `aheadIs` clauses inside them", () {
+        var result = builder
+          .behindIsNot(
+            builder.concat([
+              builder.exactly("abc"),
+              builder.aheadIs(
+                builder.either([
+                  builder.exactly("de"), 
+                  builder.exactly("abc"),
+                ])
+              ),
+            ]),
+          )
+          .compile();
+        expect(result, equals("(?!(?<=abc(de|abc)))"));
+      });
+
       test("those with erroneous `aheadIs` clauses inside them", () {
         expect(
           () {
@@ -339,6 +356,23 @@ void main() {
           )
           .compile();
         expect(result, equals("(?<=abcde:abc)"));
+      });
+
+      test("those with prunable (and more complicated) `aheadIs` clauses inside them", () {
+        var result = builder
+          .behindIs(
+            builder.concat([
+              builder.exactly("abc"),
+              builder.aheadIs(
+                builder.either([
+                  builder.exactly("de"), 
+                  builder.exactly("abc"),
+                ])
+              ),
+            ]),
+          )
+          .compile();
+        expect(result, equals("(?<=abc(de|abc))"));
       });
 
       test("those with erroneous `aheadIs` clauses inside them", () {

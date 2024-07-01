@@ -23,7 +23,7 @@ extension _RecipeTraversal on RegExpRecipe {
     RegExpRecipe? prevRecipe = null;
     RegExpRecipe newRecipe = this;
     while (newRecipe != prevRecipe) {
-      var result = transform(this);
+      var result = transform(newRecipe);
       if (result == null) return newRecipe;
       prevRecipe = newRecipe;
       newRecipe = result;
@@ -61,14 +61,24 @@ extension _RecipeTraversal on RegExpRecipe {
 TransformBinder pureTransform(TransformFn transform) => (_) => transform;
 
 TransformFn _transform_spliceOutAheadIs(RegExpRecipe rootRecipe) {
-  var sourcesToCheck = <RegExpRecipe>{rootRecipe, rootRecipe.sources.first};
+  var sourcesToCheck = <RegExpRecipe>{rootRecipe.sources.first};
   return (recipe) {
+    if (recipe == rootRecipe) return recipe;
     if (!sourcesToCheck.contains(recipe)) return null;
 
     switch (recipe) {
       // pruning case
       case AugmentedRegExpRecipe(tag: RegExpTag.aheadIs, :var source): {
-        return source;
+        var newSource = source;
+        // TODO: remove this checking logic and just capture all the time
+        //  when normalizing redundant/nested captures has been implemented
+        var needsCapture = {
+          RegExpTag.either,
+        }.contains(newSource.tag);
+        if (needsCapture) {
+          newSource = regExpBuilder.capture(newSource);
+        }
+        return newSource;
       }
 
       // recursive checking cases
