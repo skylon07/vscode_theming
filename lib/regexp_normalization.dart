@@ -61,19 +61,21 @@ extension _RecipeTraversal on RegExpRecipe {
 TransformBinder pureTransform(TransformFn transform) => (_) => transform;
 
 TransformFn _transform_spliceOutAheadIs(RegExpRecipe rootRecipe) {
-  var sourcesToCheck = <RegExpRecipe>{rootRecipe.sources.first};
+  var splicableRecipes = <RegExpRecipe>{rootRecipe.sources.first};
   return (recipe) {
     if (recipe == rootRecipe) return recipe;
-    if (!sourcesToCheck.contains(recipe)) return null;
 
     switch (recipe) {
       // pruning case
-      case AugmentedRegExpRecipe(tag: RegExpTag.aheadIs, :var source): {
+      case AugmentedRegExpRecipe(tag: RegExpTag.aheadIs, :var source)
+        when splicableRecipes.contains(recipe):
+      {
         var newSource = source;
         // TODO: remove this checking logic and just capture all the time
         //  when normalizing redundant/nested captures has been implemented
         var needsCapture = {
           RegExpTag.either,
+          RegExpTag.concat,
         }.contains(newSource.tag);
         if (needsCapture) {
           newSource = regExpBuilder.capture(newSource);
@@ -84,15 +86,15 @@ TransformFn _transform_spliceOutAheadIs(RegExpRecipe rootRecipe) {
       // recursive checking cases
 
       case AugmentedRegExpRecipe(tag: RegExpTag.capture, :var source): {
-        sourcesToCheck.add(source);
+        splicableRecipes.add(source);
       }
       
       case JoinedRegExpRecipe(tag: RegExpTag.concat, :var sources): {
-        sourcesToCheck.add(sources.last);
+        splicableRecipes.add(sources.last);
       }
 
       case JoinedRegExpRecipe(tag: RegExpTag.either, :var sources): {
-        sourcesToCheck.addAll(sources);
+        splicableRecipes.addAll(sources);
       }
 
       default: break;

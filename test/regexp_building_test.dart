@@ -392,4 +392,27 @@ void main() {
       });
     });
   });
+
+
+  group("complex normalization cases, like", () {
+    test("many splicable `aheadIs()` recipes nested deep within \"unmarked\" recipes", () {
+      var result = builder
+        .behindIs(
+          builder.concat([
+            builder.either([
+              builder.exactly("inside_either_1"),
+              builder.aheadIs(builder.exactly("inside_either_2")),
+              builder.concat([
+                builder.exactly("inside_"),
+                builder.aheadIs(builder.exactly("either_3")),
+              ]),
+            ]),
+            builder.space(req: false),
+            builder.exactly("after_space"),
+          ])
+        )
+        .compile();
+        expect(result, equals(r"(?<=(inside_either_1|inside_either_2|(inside_either_3))\s*after_space)"));
+    });
+  });
 }
