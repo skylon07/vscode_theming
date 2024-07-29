@@ -166,8 +166,8 @@ abstract base class RegExpBuilder<CollectionT> {
 }
 
 
-final class BlankBuilder extends RegExpBuilder<()> {
+final class _BlankBuilder extends RegExpBuilder<()> {
   @override
   () createCollection() => ();
 }
-final regExpBuilder = BlankBuilder();
+final regExpBuilder = _BlankBuilder();
