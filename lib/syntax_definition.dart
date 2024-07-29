@@ -329,6 +329,13 @@ final class RegExpPair {
   final RegExpRecipe end;
 
   RegExpPair(this.begin, this.end);
+
+  RegExpRecipe asSingleRecipe() => _singleRecipe;
+  late final _singleRecipe = regExpBuilder.concat([
+    begin,
+    regExpBuilder.zeroOrMore(regExpBuilder.anything),
+    end,
+  ]);
 }
 
 
