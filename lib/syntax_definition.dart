@@ -15,6 +15,7 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
   final _linker = _ScopeLinker();
 
   late final CollectionT collection;
+  late final entireRecipe = GroupRef();
   
   SyntaxDefinition({
     this.scopePrefix,
@@ -228,7 +229,7 @@ abstract base class SyntaxDefinition<BuilderT extends RegExpBuilder<CollectionT>
   Map<int, CapturePattern> _capturesAsPattern(Map<GroupRef, StyleName> captures, RegExpRecipe recipe, String unitDebugName, String captureKeyName) {
     var patterns = <int, CapturePattern>{};
     for (var MapEntry(key: ref, value: styleName) in captures.entries) {
-      var capturePosition = recipe.positionOf(ref);
+      var capturePosition = ref == entireRecipe ? 0 : recipe.positionOf(ref);
       patterns[capturePosition] = 
         CapturePattern(
           debugName: "$unitDebugName.$captureKeyName[$capturePosition]",
