@@ -366,13 +366,6 @@ void main() {
         );
       });
     });
-
-
-    group("that are inlined, like", () {
-      test("those with a `match` regex", () {
-
-      });
-    });
   });
 
   // TODO: test main body creation and warnings (like unused recipes)
