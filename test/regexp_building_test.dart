@@ -110,6 +110,36 @@ void main() {
       expect(() => recipe.positionOf(ref4), throwsArgumentError);
       expect(recipe.positionOf(ref5), equals(4));
     });
+
+    test("recipes that invalidate references through duplication", () {
+      var ref1 = GroupRef();
+      var ref2 = GroupRef();
+
+      var pair = RegExpPair(
+        builder.capture(builder.exactly("("), ref1),
+        builder.capture(builder.exactly(")"), ref2),
+      );
+
+      RegExpRecipe createRecipe({required bool allowDuplicateRefs}) => builder.either(
+        [
+          builder.concat([
+            pair.begin,
+            builder.anything,
+          ]),
+          builder.concat([
+            pair.begin,
+            pair.end,
+          ]),
+        ],
+        allowDuplicateRefs: allowDuplicateRefs,
+      );
+
+      expect(() => createRecipe(allowDuplicateRefs: false), throwsArgumentError);
+
+      var recipe = createRecipe(allowDuplicateRefs: true);
+      expect(() => recipe.compile(), returnsNormally);
+      expect(() => recipe.positionOf(ref1), throwsArgumentError);
+    });
   });
 
 

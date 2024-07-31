@@ -74,12 +74,14 @@ typedef Augmenter = String Function(String expr);
 
 final class JoinedRegExpRecipe extends RegExpRecipe {
   final String joinBy;
+  final bool allowDuplicateRefs;
 
-  JoinedRegExpRecipe(List<RegExpRecipe> sources, this.joinBy, {super.tag}) : 
+  JoinedRegExpRecipe(List<RegExpRecipe> sources, this.joinBy, {super.tag, required this.allowDuplicateRefs}) : 
     super(
       sources,
       GroupTracker.combine(
-        sources.map((source) => source._tracker)
+        sources.map((source) => source._tracker),
+        allowDuplicateRefs: allowDuplicateRefs,
       ),
     );
 
@@ -88,10 +90,12 @@ final class JoinedRegExpRecipe extends RegExpRecipe {
     List<RegExpRecipe>? sources,
     String? joinBy,
     RegExpTag? tag,
+    bool? allowDuplicateRefs,
   }) => JoinedRegExpRecipe(
     sources ?? this.sources,
     joinBy ?? this.joinBy,
     tag: tag ?? this.tag,
+    allowDuplicateRefs: allowDuplicateRefs ?? this.allowDuplicateRefs,
   );
 
   @override
@@ -166,11 +170,13 @@ class GroupRef {
 final class GroupTracker {
   final Map<GroupRef, int> _positions;
   final int _groupCount;
+  final Set<GroupRef> _invalidRefs;
 
-  const GroupTracker._create(this._positions, this._groupCount);
-  const GroupTracker(): this._create(const {}, 0);
+  const GroupTracker._create(this._positions, this._groupCount, this._invalidRefs);
+  const GroupTracker(): this._create(const {}, 0, const {});
 
   GroupTracker startTracking(GroupRef newRef, [int position = 1]) {
+    _throwIfInvalid(newRef);
     assert (!_positions.containsKey(newRef));
     return GroupTracker._create(
       {
@@ -178,10 +184,12 @@ final class GroupTracker {
         newRef: position,
       },
       _groupCount,
+      _invalidRefs,
     );
   }
 
   int getPosition(GroupRef ref) {
+    _throwIfInvalid(ref);
     if (!_positions.containsKey(ref)) throw ArgumentError("Position not tracked for ref!", "ref");
     ref._positionUsed = true;
     return _positions[ref]!;
@@ -195,20 +203,40 @@ final class GroupTracker {
         groupRef: position + by,
     },
     _groupCount + by,
+    _invalidRefs,
   );
 
-  static GroupTracker combine(Iterable<GroupTracker> trackers) {
+  void _throwIfInvalid(GroupRef ref) {
+    var isInvalid = _invalidRefs.contains(ref);
+    if (isInvalid) throw ArgumentError("Ref is invalid because it was used multiple times!", "ref");
+  }
+
+  static GroupTracker combine(Iterable<GroupTracker> trackers, {bool allowDuplicateRefs = false}) {
     var combinedPositions = <GroupRef, int>{};
+    var combinedInvalidRefs = <GroupRef>{};
     var totalGroupCount = 0;
 
     for (var tracker in trackers) {
+      combinedInvalidRefs.addAll(tracker._invalidRefs);
       for (var MapEntry(key: groupRef, value: position) in tracker._positions.entries) {
-        assert (!combinedPositions.containsKey(groupRef));
-        combinedPositions[groupRef] = position + totalGroupCount;
+        if (combinedInvalidRefs.contains(groupRef)) continue;
+
+        if (!combinedPositions.containsKey(groupRef)) {
+          combinedPositions[groupRef] = position + totalGroupCount;
+        } else if (allowDuplicateRefs) {
+          combinedPositions.remove(groupRef);
+          combinedInvalidRefs.add(groupRef);
+        } else {
+          throw ArgumentError("""
+A GroupRef was reused in multiple places.
+By default, this is not allowed since the GroupRef is no longer a reliable reference.
+Pass `allowDuplicateRefs: true` to bypass this error if you understand ."""
+          );
+        }
       }
       totalGroupCount += tracker._groupCount;
     }
 
-    return GroupTracker._create(combinedPositions, totalGroupCount);
+    return GroupTracker._create(combinedPositions, totalGroupCount, combinedInvalidRefs);
   }
 }

@@ -40,16 +40,17 @@ abstract base class RegExpBuilder<CollectionT> {
     return normalize(TrackedRegExpRecipe(inner, augment, ref: ref, tag: RegExpTag.capture));
   }
 
-  RegExpRecipe concat(List<RegExpRecipe> recipes) => capture(_join(recipes, joinBy: "", tag: RegExpTag.concat));
+  RegExpRecipe concat(List<RegExpRecipe> recipes, {bool allowDuplicateRefs = false}) => 
+    capture(_join(recipes, joinBy: "", tag: RegExpTag.concat, allowDuplicateRefs: allowDuplicateRefs));
 
   RegExpPair pair({required RegExpRecipe begin, required RegExpRecipe end}) => RegExpPair(begin, end);
 
   RegExpRecipe _augment(RegExpRecipe recipe, String Function(String expr) mapExpr, {RegExpTag tag = RegExpTag.none}) =>
     normalize(AugmentedRegExpRecipe(recipe, mapExpr, tag: tag));
 
-  RegExpRecipe _join(List<RegExpRecipe> recipes, {required String joinBy, RegExpTag tag = RegExpTag.none}) {
+  RegExpRecipe _join(List<RegExpRecipe> recipes, {required String joinBy, RegExpTag tag = RegExpTag.none, required bool allowDuplicateRefs}) {
     if (recipes.isEmpty) throw ArgumentError("Joining list should not be empty.", "recipes"); 
-    return normalize(JoinedRegExpRecipe(recipes, joinBy, tag: tag));
+    return normalize(JoinedRegExpRecipe(recipes, joinBy, tag: tag, allowDuplicateRefs: allowDuplicateRefs));
   }
 
 
@@ -82,8 +83,8 @@ abstract base class RegExpBuilder<CollectionT> {
   RegExpRecipe repeatBetween(RegExpRecipe inner, int lowTimes, int highTimes) =>
     _augment(inner, (expr) => "$expr{$lowTimes,$highTimes}");
 
-  RegExpRecipe either(List<RegExpRecipe> branches) =>
-    capture(_join(branches, joinBy: r"|", tag: RegExpTag.either));
+  RegExpRecipe either(List<RegExpRecipe> branches, {bool allowDuplicateRefs = false}) =>
+    capture(_join(branches, joinBy: r"|", tag: RegExpTag.either, allowDuplicateRefs: allowDuplicateRefs));
 
 
   // "look around" operations
