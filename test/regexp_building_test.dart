@@ -5,6 +5,7 @@ import '../lib/regexp_normalization.dart';
 
 
 var builder = regExpBuilder;
+var throwsRecipeConfigurationError = throwsA(isA<RecipeConfigurationError>());
 
 void main() {
   group("capture index tracking, like", () {
@@ -319,7 +320,7 @@ void main() {
               ])
             );
           }, 
-          throwsA(isA<RecipeConfigurationError>())
+          throwsRecipeConfigurationError,
         );
       });
 
@@ -335,7 +336,7 @@ void main() {
               ])
             );
           },
-          throwsA(isA<RecipeConfigurationError>())
+          throwsRecipeConfigurationError,
         );
       });
     });
@@ -354,7 +355,7 @@ void main() {
               ])
             );
           }, 
-          throwsA(isA<RecipeConfigurationError>())
+          throwsRecipeConfigurationError,
         );
       });
 
@@ -370,7 +371,7 @@ void main() {
               ]),
             );
           },
-          throwsA(isA<RecipeConfigurationError>())
+          throwsRecipeConfigurationError,
         );
       });
 
@@ -417,7 +418,7 @@ void main() {
               ])
             );
           },
-          throwsA(isA<RecipeConfigurationError>())
+          throwsRecipeConfigurationError,
         );
       });
     });
