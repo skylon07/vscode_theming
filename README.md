@@ -23,4 +23,4 @@ And that's it! You can now use all the tooling this library offers.
 
 (I still need to write this section... Bug me if this is an issue for you.)
 
-(I should also probably add some examples...)
+(I should also probably add some examples... and probaby a template for a VSCode theme extension...)
