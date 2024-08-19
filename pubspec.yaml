@@ -1,7 +1,12 @@
 name: vscode_theming_tools
+version: 1.0.0
+description: Some tools to help create your own language themes in VSCode.
+repository: https://github.com/skylon07/vscode_theming_tools
 
 environment:
   sdk: '^3.4.0'
 
+dependencies:
+  meta: ^1.15.0
 dev_dependencies:
   test: ^1.25.2
