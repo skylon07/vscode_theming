@@ -1,5 +1,7 @@
 import 'dart:mirrors';
 
+import 'package:vscode_theming/vscode_theming.dart';
+
 import './syntax_printer.dart';
 import './regexp_builder_base.dart';
 import './regexp_recipes.dart';
@@ -331,10 +333,9 @@ final class RegExpPair {
 
   RegExpPair(this.begin, this.end);
 
-  RegExpRecipe asSingleRecipe() => _singleRecipe;
-  late final _singleRecipe = regExpBuilder.concat([
+  RegExpRecipe asSingleRecipe([RegExpRecipe? between]) => regExpBuilder.concat([
     begin,
-    regExpBuilder.zeroOrMore(regExpBuilder.anything),
+    between ?? regExpBuilder.zeroOrMore(regExpBuilder.anything),
     end,
   ]);
 }
