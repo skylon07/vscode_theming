@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
 
-import '../lib/vscode_theming.dart';
+import '../lib/vscode_theming_tools.dart';
 
 
 String syntaxPrint(SyntaxElement syntax) =>

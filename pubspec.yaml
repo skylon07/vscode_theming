@@ -1,4 +1,4 @@
-name: vscode_theming
+name: vscode_theming_tools
 
 environment:
   sdk: '^3.4.0'

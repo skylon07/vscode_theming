@@ -1,7 +1,5 @@
 import 'dart:mirrors';
 
-import 'package:vscode_theming/vscode_theming.dart';
-
 import './syntax_printer.dart';
 import './regexp_builder_base.dart';
 import './regexp_recipes.dart';

@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
 
-import '../lib/vscode_theming.dart';
+import '../lib/vscode_theming_tools.dart';
 import '../lib/regexp_normalization.dart';
 
 
