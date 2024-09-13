@@ -58,7 +58,7 @@ extension _RecipeTraversal on RegExpRecipe {
   }
 }
 
-TransformBinder pureTransform(TransformFn transform) => (_) => transform;
+TransformBinder _pureTransform(TransformFn transform) => (_) => transform;
 
 TransformFn _transform_spliceOutAheadIs(RegExpRecipe rootRecipe) {
   var splicableRecipes = <RegExpRecipe>{rootRecipe.sources.first};
@@ -172,7 +172,7 @@ EitherFlatClasses _flattenEither(JoinedRegExpRecipe recipe) {
   var notCharsList = <InvertibleRegExpRecipe>[];
   var restList = <RegExpRecipe>[];
 
-  recipe.traverseTransform(pureTransform((source) {
+  recipe.traverseTransform(_pureTransform((source) {
     switch (source) {
       case InvertibleRegExpRecipe(tag: RegExpTag.chars, inverted: false): {
         charsList.add(source);
@@ -219,7 +219,7 @@ RegExpRecipe _normalizeBehindIsNot(AugmentedRegExpRecipe recipe) {
   var normalizedRecipe = recipe.traverseTransformAll([
     _transform_spliceOutAheadIs,
     _transform_spliceOutCapture,
-    pureTransform((source) {
+    _pureTransform((source) {
       switch (source.tag) {
         case RegExpTag.capture:
         case RegExpTag.either: {
@@ -258,7 +258,7 @@ RegExpRecipe _normalizeBehindIs(AugmentedRegExpRecipe recipe) {
   return recipe.traverseTransformAll([
     _transform_spliceOutAheadIs,
     _transform_spliceOutCapture,
-    pureTransform((source) {
+    _pureTransform((source) {
       switch (source.tag) {
         case RegExpTag.aheadIs: {
           throw RecipeConfigurationError(recipe, source, "only allowed in the last position of this expression");
