@@ -195,7 +195,7 @@ TransformFn _transform_extractTrailingAheadIs(RegExpRecipe rootRecipe) {
           trailingRecipes.add(sources.last);
         }
       } else if (recipe case AugmentedRegExpRecipe(tag: RegExpTag.aheadIs)) {
-        throw RecipeConfigurationError(recipe, rootRecipe, "only allowed in the last position of this expression");
+        return regExpBuilder.nothing;
       }
       return recipe;
     }
