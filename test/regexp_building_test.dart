@@ -288,11 +288,9 @@ void main() {
             ]),
           )
           .compile();
-        expect(result, equals("(?<!abcde:abc)"));
-      });
+        expect(result, equals("((?<!abc)(?=de:abc))"));
 
-      test("those with prunable (and more complicated) `aheadIs` clauses inside them", () {
-        var result = builder
+        var result2 = builder
           .behindIsNot(
             builder.concat([
               builder.exactly("abc"),
@@ -305,7 +303,61 @@ void main() {
             ]),
           )
           .compile();
-        expect(result, equals("(?!(?<=abc(de|abc)))"));
+        expect(result2, equals("((?<!abc)(?=de|abc))"));
+      });
+
+      test("those with prunable `aheadIs` clauses inside them nested in a single `either()` recipe", () {
+        var result = builder
+          .behindIsNot(
+            builder.concat([
+              builder.either([
+                builder.exactly("ab"), 
+                builder.exactly("cd"),
+              ]),
+              builder.aheadIs(
+                builder.exactly("efg"),
+              ),
+            ]),
+          )
+          .compile();
+        // TODO: there are redundant captures `(ab)`, `(cd)` because they are actually
+        //  `concat(ab, <nothing>)` recipes; this should be fixed if it can
+        expect(result, equals("(?!((?<=(ab))(?=efg))|((?<=(cd))(?=efg)))"));
+      });
+
+      test("those with prunable `aheadIs` clauses inside them nested in multiple `either()` recipes", () {
+        var result = builder
+          .behindIsNot(
+            builder.concat([
+              builder.either([
+                builder.either([
+                  builder.exactly("a1"), 
+                  builder.exactly("A1"), 
+                ]),
+                builder.either([
+                  builder.exactly("a2"), 
+                  builder.exactly("A2"), 
+                ]),
+              ]),
+              builder.either([
+                builder.either([
+                  builder.exactly("b1"), 
+                  builder.exactly("B1"), 
+                ]),
+                builder.either([
+                  builder.exactly("b2"), 
+                  builder.exactly("B2"), 
+                ]),
+              ]),
+              builder.aheadIs(
+                builder.exactly("cde"),
+              ),
+            ]),
+          )
+          .compile();
+        // TODO: there are redundant captures `(ab)`, `(cd)` because they are actually
+        //  `concat(ab, <nothing>)` recipes; this should be fixed if it can
+        expect(result, equals("(?!((?<=((a1))((b1)))(?=cde))|((?<=((a1))((B1)))(?=cde))|((?<=((a1))((b2)))(?=cde))|((?<=((a1))((B2)))(?=cde))|((?<=((A1))((b1)))(?=cde))|((?<=((A1))((B1)))(?=cde))|((?<=((A1))((b2)))(?=cde))|((?<=((A1))((B2)))(?=cde))|((?<=((a2))((b1)))(?=cde))|((?<=((a2))((B1)))(?=cde))|((?<=((a2))((b2)))(?=cde))|((?<=((a2))((B2)))(?=cde))|((?<=((A2))((b1)))(?=cde))|((?<=((A2))((B1)))(?=cde))|((?<=((A2))((b2)))(?=cde))|((?<=((A2))((B2)))(?=cde)))"));
       });
 
       test("those with erroneous `aheadIs` clauses inside them", () {
@@ -386,11 +438,9 @@ void main() {
             ]),
           )
           .compile();
-        expect(result, equals("(?<=abcde:abc)"));
-      });
+        expect(result, equals("((?<=abc)(?=de:abc))"));
 
-      test("those with prunable (and more complicated) `aheadIs` clauses inside them", () {
-        var result = builder
+        var result2 = builder
           .behindIs(
             builder.concat([
               builder.exactly("abc"),
@@ -403,7 +453,61 @@ void main() {
             ]),
           )
           .compile();
-        expect(result, equals("(?<=abc(de|abc))"));
+        expect(result2, equals("((?<=abc)(?=de|abc))"));
+      });
+
+      test("those with prunable `aheadIs` clauses inside them nested in a single `either()` recipe", () {
+        var result = builder
+          .behindIs(
+            builder.concat([
+              builder.either([
+                builder.exactly("ab"), 
+                builder.exactly("cd"),
+              ]),
+              builder.aheadIs(
+                builder.exactly("efg"),
+              ),
+            ]),
+          )
+          .compile();
+        // TODO: there are redundant captures `(ab)`, `(cd)` because they are actually
+        //  `concat(ab, <nothing>)` recipes; this should be fixed if it can
+        expect(result, equals("(((?<=(ab))(?=efg))|((?<=(cd))(?=efg)))"));
+      });
+
+      test("those with prunable `aheadIs` clauses inside them nested in multiple `either()` recipes", () {
+        var result = builder
+          .behindIs(
+            builder.concat([
+              builder.either([
+                builder.either([
+                  builder.exactly("a1"), 
+                  builder.exactly("A1"), 
+                ]),
+                builder.either([
+                  builder.exactly("a2"), 
+                  builder.exactly("A2"), 
+                ]),
+              ]),
+              builder.either([
+                builder.either([
+                  builder.exactly("b1"), 
+                  builder.exactly("B1"), 
+                ]),
+                builder.either([
+                  builder.exactly("b2"), 
+                  builder.exactly("B2"), 
+                ]),
+              ]),
+              builder.aheadIs(
+                builder.exactly("cde"),
+              ),
+            ]),
+          )
+          .compile();
+        // TODO: there are redundant captures `(ab)`, `(cd)` because they are actually
+        //  `concat(ab, <nothing>)` recipes; this should be fixed if it can
+        expect(result, equals("(((?<=((a1))((b1)))(?=cde))|((?<=((a1))((B1)))(?=cde))|((?<=((a1))((b2)))(?=cde))|((?<=((a1))((B2)))(?=cde))|((?<=((A1))((b1)))(?=cde))|((?<=((A1))((B1)))(?=cde))|((?<=((A1))((b2)))(?=cde))|((?<=((A1))((B2)))(?=cde))|((?<=((a2))((b1)))(?=cde))|((?<=((a2))((B1)))(?=cde))|((?<=((a2))((b2)))(?=cde))|((?<=((a2))((B2)))(?=cde))|((?<=((A2))((b1)))(?=cde))|((?<=((A2))((B1)))(?=cde))|((?<=((A2))((b2)))(?=cde))|((?<=((A2))((B2)))(?=cde)))"));
       });
 
       test("those with erroneous `aheadIs` clauses inside them", () {
@@ -426,10 +530,12 @@ void main() {
 
 
   group("complex normalization cases, like", () {
-    test("many splicable `aheadIs()` recipes nested deep within \"unmarked\" recipes", () {
+    test("many splicable `aheadIs()` recipes nested sporradically in the source tree", () {
       var result = builder
         .behindIs(
           builder.concat([
+            builder.exactly("before_space"),
+            builder.space(req: false),
             builder.either([
               builder.exactly("inside_either_1"),
               builder.aheadIs(builder.exactly("inside_either_2")),
@@ -438,12 +544,10 @@ void main() {
                 builder.aheadIs(builder.exactly("either_3")),
               ]),
             ]),
-            builder.space(req: false),
-            builder.exactly("after_space"),
           ])
         )
         .compile();
-        expect(result, equals(r"(?<=(inside_either_1|inside_either_2|(inside_either_3))\s*after_space)"));
+        expect(result, equals(r"(((?<=before_space\s*(inside_either_1)))|((?<=before_space\s*())(?=inside_either_2))|((?<=before_space\s*((inside_)))(?=either_3)))"));
     });
   });
 }
