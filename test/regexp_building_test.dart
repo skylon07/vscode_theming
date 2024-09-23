@@ -324,6 +324,22 @@ void main() {
         );
       });
 
+      test("those with erroneous (captured) `aheadIs` clauses inside them", () {
+        expect(
+          () {
+            builder.behindIsNot(
+              builder.concat([
+                builder.capture(builder.aheadIs(
+                  builder.exactly("invalid lookahead!")
+                )),
+                builder.exactly("abc"),
+              ])
+            );
+          }, 
+          throwsRecipeConfigurationError,
+        );
+      });
+
       test("those with erroneous `aheadIsNot` clauses inside them", () {
         expect(
           () {
@@ -339,42 +355,26 @@ void main() {
           throwsRecipeConfigurationError,
         );
       });
-    });
 
-
-    group("`behindIs` patterns, like", () {
-      test("those with erroneous `aheadIsNot` clauses inside them", () {
+      test("those with erroneous (captured) `aheadIsNot` clauses inside them", () {
         expect(
           () {
-            builder.behindIs(
+            builder.behindIsNot(
               builder.concat([
                 builder.exactly("abc"),
-                builder.aheadIsNot(
-                  builder.exactly("check ahead is not me!")
-                ),
-              ])
-            );
-          }, 
-          throwsRecipeConfigurationError,
-        );
-      });
-
-      test("those with erroneous `behindIsNot` clauses inside them", () {
-        expect(
-          () {
-            builder.behindIs(
-              builder.concat([
-                builder.exactly("abc"),
-                builder.behindIsNot(
+                builder.capture(builder.aheadIsNot(
                   builder.exactly("check behind is not me!")
-                ),
-              ]),
+                )),
+              ])
             );
           },
           throwsRecipeConfigurationError,
         );
       });
+    });
 
+
+    group("`behindIs` patterns, like", () {
       test("those with prunable `aheadIs` clauses inside them", () {
         var result = builder
           .behindIs(
@@ -406,6 +406,8 @@ void main() {
         expect(result, equals("(?<=abc(de|abc))"));
       });
 
+      // TODO: there are a lot of duplicated versions of many tests (including this one);
+      //  should these tests be structured in a different way?
       test("those with erroneous `aheadIs` clauses inside them", () {
         expect(
           () {
@@ -416,6 +418,86 @@ void main() {
                 ),
                 builder.exactly("abc"),
               ])
+            );
+          },
+          throwsRecipeConfigurationError,
+        );
+      });
+      
+      test("those with erroneous (captured) `aheadIs` clauses inside them", () {
+        expect(
+          () {
+            builder.behindIs(
+              builder.concat([
+                builder.capture(builder.aheadIs(
+                  builder.exactly("invalid lookahead!")
+                )),
+                builder.exactly("abc"),
+              ])
+            );
+          },
+          throwsRecipeConfigurationError,
+        );
+      });
+
+      test("those with erroneous `aheadIsNot` clauses inside them", () {
+        expect(
+          () {
+            builder.behindIs(
+              builder.concat([
+                builder.exactly("abc"),
+                builder.aheadIsNot(
+                  builder.exactly("check ahead is not me!")
+                ),
+              ])
+            );
+          }, 
+          throwsRecipeConfigurationError,
+        );
+      });
+
+      test("those with erroneous (captured) `aheadIsNot` clauses inside them", () {
+        expect(
+          () {
+            builder.behindIs(
+              builder.concat([
+                builder.exactly("abc"),
+                builder.capture(builder.aheadIsNot(
+                  builder.exactly("check ahead is not me!")
+                )),
+              ])
+            );
+          }, 
+          throwsRecipeConfigurationError,
+        );
+      });
+
+      test("those with erroneous `behindIsNot` clauses inside them", () {
+        expect(
+          () {
+            builder.behindIs(
+              builder.concat([
+                builder.exactly("abc"),
+                builder.behindIsNot(
+                  builder.exactly("check behind is not me!")
+                ),
+              ]),
+            );
+          },
+          throwsRecipeConfigurationError,
+        );
+      });
+
+      test("those with erroneous (captured) `behindIsNot` clauses inside them", () {
+        expect(
+          () {
+            builder.behindIs(
+              builder.concat([
+                builder.exactly("abc"),
+                builder.capture(builder.behindIsNot(
+                  builder.exactly("check behind is not me!")
+                )),
+              ]),
             );
           },
           throwsRecipeConfigurationError,
