@@ -1,3 +1,8 @@
+## 1.0.2
+
+Fix some normalization bugs.
+
+
 ## 1.0.1
 
 Version bump, to (hopefully) synchronize files.
