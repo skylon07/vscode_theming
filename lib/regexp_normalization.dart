@@ -85,7 +85,9 @@ TransformFn _transform_spliceOutAheadIs(RegExpRecipe rootRecipe) {
 
       // recursive checking cases
 
-      case AugmentedRegExpRecipe(tag: RegExpTag.capture, :var source): {
+      case AugmentedRegExpRecipe(tag: RegExpTag.capture || RegExpTag.uncapture, :var source)
+        when splicableRecipes.contains(recipe):
+      {
         splicableRecipes.add(source);
       }
       
@@ -249,40 +251,46 @@ RegExpRecipe _normalizeBehindIsNot(AugmentedRegExpRecipe recipe) {
       )
     );
   } else {
-    return normalizedRecipe;
+    return normalizedRecipe.withCapturesIgnored;
   }
 }
 
 
 RegExpRecipe _normalizeBehindIs(AugmentedRegExpRecipe recipe) {
-  return recipe.traverseTransformAll([
-    _transform_spliceOutAheadIs,
-    _transform_spliceOutCapture,
-    _pureTransform((source) {
-      switch (source.tag) {
-        case RegExpTag.aheadIs: {
-          throw RecipeConfigurationError(recipe, source, "only allowed in the last position of this expression");
-        }
+  return recipe
+    .traverseTransformAll([
+      _transform_spliceOutAheadIs,
+      _transform_spliceOutCapture,
+      _pureTransform((source) {
+        switch (source.tag) {
+          case RegExpTag.aheadIs: {
+            throw RecipeConfigurationError(recipe, source, "only allowed in the last position of this expression");
+          }
 
-        case RegExpTag.aheadIsNot:
-        case RegExpTag.behindIsNot: {
-          throw RecipeConfigurationError(recipe, source);
-        }
+          case RegExpTag.aheadIsNot:
+          case RegExpTag.behindIsNot: {
+            throw RecipeConfigurationError(recipe, source);
+          }
 
-        default: return source;
-      }
-    }),
-  ]);
+          default: return source;
+        }
+      }),
+    ])
+    .withCapturesIgnored;
 }
 
 
 RegExpRecipe _normalizeAheadIsNot(AugmentedRegExpRecipe recipe) {
-  return recipe.traverseTransform(_transform_spliceOutCapture);
+  return recipe
+    .traverseTransform(_transform_spliceOutCapture)
+    .withCapturesIgnored;
 }
 
 
 RegExpRecipe _normalizeAheadIs(AugmentedRegExpRecipe recipe) {
-  return recipe.traverseTransform(_transform_spliceOutCapture);
+  return recipe
+    .traverseTransform(_transform_spliceOutCapture)
+    .withCapturesIgnored;
 }
 
 // TODO: normalize redundant/nested capture()s, checking for reused refs along the way

@@ -17,6 +17,13 @@ sealed class RegExpRecipe {
   bool get hasCompiled => _hasCompiled;
 
   int positionOf(GroupRef ref) => _tracker.getPosition(ref);
+  /// A special "uncaptured" version of this recipe that ignores all captures within it
+  late final withCapturesIgnored = TrackedRegExpRecipe(
+    this,
+    (expr) => expr,
+    tracker: GroupTracker(),
+    tag: RegExpTag.uncapture,
+  );
 
   @mustBeOverridden
   RegExpRecipe copy({RegExpTag? tag});
@@ -25,8 +32,8 @@ sealed class RegExpRecipe {
 
 enum RegExpTag {
   none,
-  capture, either, chars,
-  concat,
+  capture, uncapture,
+  either, chars, concat,
   aheadIs, aheadIsNot,
   behindIs, behindIsNot,
 }
@@ -74,6 +81,7 @@ typedef Augmenter = String Function(String expr);
 
 final class JoinedRegExpRecipe extends RegExpRecipe {
   final String joinBy;
+  // TODO: remove this (in favor of `recipe.withCapturesIgnored`)
   final bool allowDuplicateRefs;
 
   JoinedRegExpRecipe(List<RegExpRecipe> sources, this.joinBy, {super.tag, required this.allowDuplicateRefs}) : 
@@ -229,8 +237,8 @@ final class GroupTracker {
         } else {
           throw ArgumentError("""
 A GroupRef was reused in multiple places.
-By default, this is not allowed since the GroupRef is no longer a reliable reference.
-Pass `allowDuplicateRefs: true` to bypass this error if you understand ."""
+This is not allowed since this makes the GroupRef an unreliable reference.
+Try using more (unique) GroupRefs or use `recipe.withCapturesIgnored` to discard some."""
           );
         }
       }
