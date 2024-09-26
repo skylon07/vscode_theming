@@ -1,3 +1,10 @@
+## 1.0.3
+
+Hotfix for a bug introduced in the new "uncapturing" mechanism.
+
+(Oh, that was a new feature in the last version, by the way.)
+
+
 ## 1.0.2
 
 Fix some normalization bugs.
