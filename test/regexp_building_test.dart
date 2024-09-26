@@ -121,25 +121,28 @@ void main() {
         builder.capture(builder.exactly(")"), ref2),
       );
 
-      RegExpRecipe createRecipe({required bool allowDuplicateRefs}) => builder.either(
+      RegExpRecipe createRecipe({required bool ignoreFirst, required bool ignoreSecond}) => builder.either(
         [
           builder.concat([
-            pair.begin,
+            if (ignoreFirst) pair.begin.withCapturesIgnored else pair.begin,
             builder.anything,
           ]),
           builder.concat([
-            pair.begin,
+            if (ignoreSecond) pair.begin.withCapturesIgnored else pair.begin,
             pair.end,
           ]),
         ],
-        allowDuplicateRefs: allowDuplicateRefs,
       );
 
-      expect(() => createRecipe(allowDuplicateRefs: false), throwsArgumentError);
+      expect(() => createRecipe(ignoreFirst: false, ignoreSecond: false), throwsArgumentError);
 
-      var recipe = createRecipe(allowDuplicateRefs: true);
+      var recipe = createRecipe(ignoreFirst: true, ignoreSecond: true);
       expect(() => recipe.compile(), returnsNormally);
       expect(() => recipe.positionOf(ref1), throwsArgumentError);
+
+      recipe = createRecipe(ignoreFirst: false, ignoreSecond: true);
+      expect(() => recipe.compile(), returnsNormally);
+      expect(recipe.positionOf(ref1), 3);
     });
   });
 

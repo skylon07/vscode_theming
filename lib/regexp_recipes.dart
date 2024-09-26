@@ -21,7 +21,7 @@ sealed class RegExpRecipe {
   late final withCapturesIgnored = TrackedRegExpRecipe(
     this,
     (expr) => expr,
-    tracker: GroupTracker(),
+    tracker: _tracker.markAllIgnored(),
     tag: RegExpTag.uncapture,
   );
 
@@ -178,13 +178,15 @@ class GroupRef {
 final class GroupTracker {
   final Map<GroupRef, int> _positions;
   final int _groupCount;
-  final Set<GroupRef> _invalidRefs;
+  final Set<GroupRef> _previouslyIgnoredRefs;
 
-  const GroupTracker._create(this._positions, this._groupCount, this._invalidRefs);
+  const GroupTracker._create(this._positions, this._groupCount, this._previouslyIgnoredRefs);
   const GroupTracker(): this._create(const {}, 0, const {});
 
   GroupTracker startTracking(GroupRef newRef, [int position = 1]) {
-    _throwIfInvalid(newRef);
+    var isDuplicate = _positions.containsKey(newRef);
+    if (isDuplicate) throw ArgumentError("Ref is invalid because it was used multiple times!", "ref");
+
     assert (!_positions.containsKey(newRef));
     return GroupTracker._create(
       {
@@ -192,13 +194,16 @@ final class GroupTracker {
         newRef: position,
       },
       _groupCount,
-      _invalidRefs,
+      _previouslyIgnoredRefs,
     );
   }
 
   int getPosition(GroupRef ref) {
-    _throwIfInvalid(ref);
-    if (!_positions.containsKey(ref)) throw ArgumentError("Position not tracked for ref!", "ref");
+    if (!_positions.containsKey(ref)) {
+      var ignoredHint = _previouslyIgnoredRefs.contains(ref) ?
+        " (It was previously tracked, then later ignored.)" : "";
+      throw ArgumentError("Position not tracked for ref!$ignoredHint", "ref");
+    }
     ref._positionUsed = true;
     return _positions[ref]!;
   }
@@ -211,29 +216,27 @@ final class GroupTracker {
         groupRef: position + by,
     },
     _groupCount + by,
-    _invalidRefs,
+    _previouslyIgnoredRefs,
   );
 
-  void _throwIfInvalid(GroupRef ref) {
-    var isInvalid = _invalidRefs.contains(ref);
-    if (isInvalid) throw ArgumentError("Ref is invalid because it was used multiple times!", "ref");
-  }
+  GroupTracker markAllIgnored() => GroupTracker._create(
+    const {},
+    _groupCount,
+    {
+      ..._previouslyIgnoredRefs,
+      ..._positions.keys,
+    },
+  );
 
   static GroupTracker combine(Iterable<GroupTracker> trackers, {bool allowDuplicateRefs = false}) {
     var combinedPositions = <GroupRef, int>{};
-    var combinedInvalidRefs = <GroupRef>{};
     var totalGroupCount = 0;
+    var combinedPreviouslyIgnoredRefs = <GroupRef>{};
 
     for (var tracker in trackers) {
-      combinedInvalidRefs.addAll(tracker._invalidRefs);
       for (var MapEntry(key: groupRef, value: position) in tracker._positions.entries) {
-        if (combinedInvalidRefs.contains(groupRef)) continue;
-
         if (!combinedPositions.containsKey(groupRef)) {
           combinedPositions[groupRef] = position + totalGroupCount;
-        } else if (allowDuplicateRefs) {
-          combinedPositions.remove(groupRef);
-          combinedInvalidRefs.add(groupRef);
         } else {
           throw ArgumentError("""
 A GroupRef was reused in multiple places.
@@ -241,10 +244,12 @@ This is not allowed since this makes the GroupRef an unreliable reference.
 Try using more (unique) GroupRefs or use `recipe.withCapturesIgnored` to discard some."""
           );
         }
+
+        combinedPreviouslyIgnoredRefs.addAll(tracker._previouslyIgnoredRefs);
       }
       totalGroupCount += tracker._groupCount;
     }
 
-    return GroupTracker._create(combinedPositions, totalGroupCount, combinedInvalidRefs);
+    return GroupTracker._create(combinedPositions, totalGroupCount, combinedPreviouslyIgnoredRefs);
   }
 }
